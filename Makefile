@@ -1,10 +1,3 @@
-IPL.tmp : ./src/IPL/IPL.s
-	nasm ./src/IPL/IPL.s -o IPL.tmp
-
-os.img : IPL.tmp
-	cp IPL.tmp os.img
-	dd if=/dev/zero of=os.img bs=512 seek=1 count=2879
-
 goo.img : os.img black.tmp
 	rm ./tmp -rf
 	mkdir ./tmp
@@ -15,6 +8,13 @@ goo.img : os.img black.tmp
 
 black.tmp : ./src/app/black.s
 	nasm ./src/app/black.s -o black.tmp
+
+IPL.tmp : ./src/IPL/IPL.s
+	nasm ./src/IPL/IPL.s -o IPL.tmp
+
+os.img : IPL.tmp
+	cp IPL.tmp os.img
+	dd if=/dev/zero of=os.img bs=512 seek=1 count=2879
 
 clean : 
 	find . -name "*.tmp"  | xargs rm -f

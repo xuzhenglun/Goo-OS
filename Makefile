@@ -17,16 +17,22 @@ os.img : IPL.tmp
 	dd if=/dev/zero of=os.img bs=512 seek=1 count=2879
 
 bootblock.tmp : bootblock.o
-	objcopy -j .text -S -O binary bootblock.o bootblock.tmp
+	objcopy  -S -O binary bootblock.o bootblock.tmp
 
-bootblock.o : bootasm.o bootmain.o
-	ld  -m elf_i386  -e start -Ttext 0xc400 -o bootblock.o bootasm.o bootmain.o
+libc.o : ./src/boot/libc.c
+	gcc -m32 -masm=intel  -c ./src/boot/libc.c -o libc.o
+
+bootblock.o : bootasm.o bootmain.o  libc.o
+	ld  -m elf_i386  -e start -Ttext 0xc400 -o bootblock.o bootasm.o bootmain.o  libc.o
 
 bootasm.o : ./src/boot/bootasm.s
 	nasm -f elf ./src/boot/bootasm.s -o bootasm.o
 
+#io_out8.o : ./src/boot/io_out8.s
+	#nasm -f elf32 ./src/boot/io_out8.s -o io_out8.o
+
 bootmain.o : ./src/boot/bootmain.c
-	gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pic -O -nostdinc -I. -c ./src/boot/bootmain.c
+	gcc -std=c99 -fno-pic -static -fno-builtin -fno-strict-aliasing -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pic -O -I. -c ./src/boot/bootmain.c
 
 debug : goo.img
 	qemu-system-i386 -boot order=a -fda ./goo.img -m 8 -S -s

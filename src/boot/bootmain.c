@@ -17,7 +17,11 @@
 #define COL8_LD_BLUE  14
 #define COL8_D_GREY   15
 
-
+struct BOOTINFO{
+    char cyls,leds,vmode,reserve;
+    short scrnx,scrny;
+    char *vram;
+};
 
 void init_palette(void);
 void set_palette(int start,int end,unsigned char *rbg);
@@ -27,9 +31,15 @@ void bootmain(void) {
     init_palette();
     /*-------------------INIT-PALETTE-COMPLETED-------------------------*/
 
-    char * vram=(char *)0xa0000;
-    int xsize=320;
-    int ysize=200;
+    char * vram;
+    int xsize;
+    int ysize;
+    struct BOOTINFO *binfo;
+
+    binfo = (struct BOOTINFO *) 0x0ff0;
+    xsize = binfo->scrnx;
+    ysize = binfo->scrny;
+    vram  = binfo->vram;
 
     boxfill8(vram,xsize,COL8_LD_BLUE     ,0          ,0          ,xsize -1  ,ysize - 29 );
     boxfill8(vram,xsize,COL8_GREY        ,0          ,ysize - 28 ,xsize -1  ,ysize - 28 );

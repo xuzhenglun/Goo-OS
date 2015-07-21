@@ -1,4 +1,5 @@
 #include "libc.h"
+#include "../golibc/stdio.h"
 
 #define COL8_BLACK    0
 #define COL8_RED      1
@@ -27,7 +28,7 @@ void init_palette(void);
 void set_palette(int start,int end,unsigned char *rbg);
 void boxfill8(char *vram, int xsize, unsigned char c, int x0, int y0,int x1, int y1);
 void putfont8(char *vram, int xsize,int x,int y,char c,char *font);
-void puts(char *vram, int xsize, int x, int y, char c, char *s);
+void print_fonts(char *vram, int xsize, int x, int y, char c, char *s);
 
 void bootmain(void) {
     init_palette();
@@ -60,13 +61,9 @@ void bootmain(void) {
     boxfill8(vram,xsize,COL8_WHITE       ,xsize - 47 ,ysize - 3  ,xsize - 3 ,ysize - 3  );
     boxfill8(vram,xsize,COL8_WHITE       ,xsize - 3  ,ysize - 24 ,xsize - 3 ,ysize - 3  );
 
-
-    /*extern char  _binary_font_bin_start[4096];*/
-    /*static char font[16] = {*/
-        /*0x00,0x18,0x18,0x18,0x18,0x24,0x24,0x24,*/
-        /*0x24,0x7e,0x42,0x42,0x42,0xe7,0x00,0x00*/
-    /*};*/
-    puts(vram,xsize,8,8,COL8_WHITE,"HOLY SHIT");
+    char s[40];
+    sprintf(s,"%d * %d ",xsize,ysize);
+    print_fonts(vram,xsize,8,8,COL8_WHITE,s);
 
     /*--------------------------HLT-------------------------------------*/
     for(;;){
@@ -138,7 +135,7 @@ void putfont8(char *vram, int xsize,int x,int y,char c,char *font){
 }
 
 
-void puts(char *vram, int xsize, int x, int y, char c, char *s){
+void print_fonts(char *vram, int xsize, int x, int y, char c, char *s){
     extern char  _binary_font_bin_start[4096];
      for(; *s != '\0' ;s++){
          putfont8(vram,xsize,x,y,c,_binary_font_bin_start + *s *16);

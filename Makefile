@@ -22,8 +22,8 @@ bootblock.tmp : bootblock.o
 libc.o : ./src/boot/libc.c
 	gcc -m32 -masm=intel  -c ./src/boot/libc.c -o libc.o
 
-bootblock.o : bootasm.o bootmain.o  libc.o font.o
-	ld  -m elf_i386  -e start -Ttext 0xc400 -o bootblock.o bootasm.o bootmain.o  libc.o font.o
+bootblock.o : bootasm.o bootmain.o  libc.o font.o sprintf.o
+	ld  -m elf_i386 -e start -Ttext 0xc400 -o bootblock.o bootasm.o bootmain.o  libc.o font.o sprintf.o vsprintf.o  strtoul0.o strlen.o
 
 bootasm.o : ./src/boot/bootasm.s
 	nasm -f elf ./src/boot/bootasm.s -o bootasm.o
@@ -32,7 +32,8 @@ bootasm.o : ./src/boot/bootasm.s
 	#nasm -f elf32 ./src/boot/io_out8.s -o io_out8.o
 
 bootmain.o : ./src/boot/bootmain.c
-	gcc -std=c99 -fno-pic -static -fno-builtin -fno-strict-aliasing -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pic -O -I. -c ./src/boot/bootmain.c
+	gcc -c -std=c99 -fno-pic -static -lc -fno-builtin -fno-strict-aliasing -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pic -O -I. -c ./src/boot/bootmain.c
+	#gcc -c -std=c99 -m32  ./src/boot/bootmain.c
 
 makefont.a : ./tools/makefont.c
 	gcc -m32  ./tools/makefont.c -o makefont.a
@@ -46,14 +47,18 @@ font.bin : makefont.a ./src/boot/hankaku.txt
 
 bin2obj.a : ./tools/bin2obj.c
 	gcc -m32 ./tools/bin2obj.c -o bin2obj.a
+	
+%.o : ./src/golibc/%.c
+	gcc -m32 -c ./src/golibc/*.c
 
 debug : goo.img
 	qemu-system-i386 -boot order=a -fda ./goo.img -m 8 -S -s
 
 run : goo.img
-	qemu-system-i386 -boot order=a -fda ./goo.img -m 8
+	qemu-system-i386 -boot order=a -fda ./goo.img -m 256
 
-clean : 
+clean :
+	#sudo umount ./tmp
 	find . -name "*.tmp"  | xargs rm -f
 	find . -name "*.img"  | xargs rm -f
 	find . -name "*.o"  | xargs rm -f

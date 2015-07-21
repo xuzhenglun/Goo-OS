@@ -26,6 +26,8 @@ struct BOOTINFO{
 void init_palette(void);
 void set_palette(int start,int end,unsigned char *rbg);
 void boxfill8(char *vram, int xsize, unsigned char c, int x0, int y0,int x1, int y1);
+void putfont8(char *vram, int xsize,int x,int y,char c,char *font);
+void puts(char *vram, int xsize, int x, int y, char c, char *s);
 
 void bootmain(void) {
     init_palette();
@@ -56,7 +58,16 @@ void bootmain(void) {
     boxfill8(vram,xsize,COL8_D_GREY      ,xsize - 47 ,ysize - 24 ,xsize - 4 ,ysize - 24 );
     boxfill8(vram,xsize,COL8_D_GREY      ,xsize - 47 ,ysize - 23 ,xsize - 47,ysize - 4  );
     boxfill8(vram,xsize,COL8_WHITE       ,xsize - 47 ,ysize - 3  ,xsize - 3 ,ysize - 3  );
-    boxfill8(vram,xsize,COL8_WHITE       ,xsize - 3  ,ysize - 24 ,xsize -3  ,ysize - 3  );
+    boxfill8(vram,xsize,COL8_WHITE       ,xsize - 3  ,ysize - 24 ,xsize - 3 ,ysize - 3  );
+
+
+    /*extern char  _binary_font_bin_start[4096];*/
+    /*static char font[16] = {*/
+        /*0x00,0x18,0x18,0x18,0x18,0x24,0x24,0x24,*/
+        /*0x24,0x7e,0x42,0x42,0x42,0xe7,0x00,0x00*/
+    /*};*/
+    puts(vram,xsize,8,8,COL8_WHITE,"HOLY SHIT");
+
     /*--------------------------HLT-------------------------------------*/
     for(;;){
          hlt();
@@ -108,4 +119,29 @@ void set_palette(int start,int end,unsigned char *rgb){
      }
      io_store_eflags(eflags);
      return;
+}
+
+
+void putfont8(char *vram, int xsize,int x,int y,char c,char *font){
+    char d;
+    for(int i= 0;i < 16 ; i++){
+        d=font[i];
+        if((d & 0x80 ) != 0 ) { vram[( y + i ) * xsize + x + 0] = c; }
+        if((d & 0x40 ) != 0 ) { vram[( y + i ) * xsize + x + 1] = c; }
+        if((d & 0x20 ) != 0 ) { vram[( y + i ) * xsize + x + 2] = c; }
+        if((d & 0x10 ) != 0 ) { vram[( y + i ) * xsize + x + 3] = c; }
+        if((d & 0x08 ) != 0 ) { vram[( y + i ) * xsize + x + 4] = c; }
+        if((d & 0x04 ) != 0 ) { vram[( y + i ) * xsize + x + 5] = c; }
+        if((d & 0x02 ) != 0 ) { vram[( y + i ) * xsize + x + 6] = c; }
+        if((d & 0x01 ) != 0 ) { vram[( y + i ) * xsize + x + 7] = c; }
+    }
+}
+
+
+void puts(char *vram, int xsize, int x, int y, char c, char *s){
+    extern char  _binary_font_bin_start[4096];
+     for(; *s != '\0' ;s++){
+         putfont8(vram,xsize,x,y,c,_binary_font_bin_start + *s *16);
+         x += 8;
+     }
 }

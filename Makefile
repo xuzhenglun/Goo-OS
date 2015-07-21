@@ -17,7 +17,7 @@ os.img : IPL.tmp
 	dd if=/dev/zero of=os.img bs=512 seek=1 count=2879
 
 bootblock.tmp : bootblock.o
-	objcopy  -S -O binary bootblock.o bootblock.tmp
+	objcopy  -O binary bootblock.o bootblock.tmp
 
 libc.o : ./src/boot/libc.c
 	gcc -m32 -masm=intel  -c ./src/boot/libc.c -o libc.o
@@ -35,16 +35,17 @@ bootmain.o : ./src/boot/bootmain.c
 	gcc -std=c99 -fno-pic -static -fno-builtin -fno-strict-aliasing -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pic -O -I. -c ./src/boot/bootmain.c
 
 makefont.a : ./tools/makefont.c
-	gcc ./tools/makefont.c -o makefont.a
+	gcc -m32  ./tools/makefont.c -o makefont.a
 
-font.o : fontbin.tmp bin2obj.a
-	./bin2obj.a fontbin.tmp  font.o _hankaku
+font.o : font.bin bin2obj.a
+	#./bin2obj.a fontbin.tmp  font.o _hankaku
+	objcopy -I binary -O elf32-i386 -B i386 font.bin font.o
 
-fontbin.tmp : makefont.a ./src/boot/hankaku.txt
-	./makefont.a ./src/boot/hankaku.txt fontbin.tmp
+font.bin : makefont.a ./src/boot/hankaku.txt
+	./makefont.a ./src/boot/hankaku.txt font.bin
 
 bin2obj.a : ./tools/bin2obj.c
-	gcc ./tools/bin2obj.c -o bin2obj.a
+	gcc -m32 ./tools/bin2obj.c -o bin2obj.a
 
 debug : goo.img
 	qemu-system-i386 -boot order=a -fda ./goo.img -m 8 -S -s
@@ -58,4 +59,5 @@ clean :
 	find . -name "*.o"  | xargs rm -f
 	find . -name "*.d"  | xargs rm -f
 	find . -name "*.a"  | xargs rm -f
+	find . -name "*.bin"  | xargs rm -f
 	rm ./tmp -rf

@@ -33,3 +33,20 @@ void io_store_eflags(int eflags){
     );
 }
 
+void load_gdtr(int limit, int addr){
+    int  gdtdesc;
+    gdtdesc = (addr << 16) + limit;
+    __asm__ __volatile__(
+        "LGDT [%0]":
+        :"r"(gdtdesc)
+    );
+}
+
+void load_idtr(int limit, int addr){
+    int  idtdesc;
+    idtdesc = (addr << 16) + limit;
+    __asm__ __volatile__(
+        "LIDT [%0]":
+        :"r"(idtdesc)
+    );
+}

@@ -7,8 +7,8 @@
 
 unsigned long strtoul0(const char **ps, int base, char *errflag);
 
-typedef unsigned char UCHAR;
-typedef unsigned int UINT;
+typedef char UCHAR;
+typedef int UINT;
 
 static UCHAR *setdec(UCHAR *s, UINT ui)
 {

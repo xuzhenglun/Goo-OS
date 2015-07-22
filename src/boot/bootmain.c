@@ -29,6 +29,10 @@ void set_palette(int start,int end,unsigned char *rbg);
 void boxfill8(char *vram, int xsize, unsigned char c, int x0, int y0,int x1, int y1);
 void putfont8(char *vram, int xsize,int x,int y,char c,char *font);
 void print_fonts(char *vram, int xsize, int x, int y, char c, char *s);
+void init_mouse_cursor(char * mouse, char bc);
+void putblock8_8(char *vram,int vxsize, int pxsize,int pysize,int px0,int py0, char *buf,int bxsize);
+
+
 
 void bootmain(void) {
     init_palette();
@@ -64,6 +68,15 @@ void bootmain(void) {
     char s[40];
     sprintf(s,"%d * %d ",xsize,ysize);
     print_fonts(vram,xsize,8,8,COL8_WHITE,s);
+
+    char mcursor[16*16];
+    int mx,my;
+    mx = (binfo->scrnx - 16) / 2;
+    my = (binfo->scrny - 28 - 16) / 2;
+    init_mouse_cursor(mcursor,COL8_LD_BLUE);
+    putblock8_8(vram,xsize,16,16,mx,my,mcursor,16);
+
+
 
     /*--------------------------HLT-------------------------------------*/
     for(;;){
@@ -141,4 +154,48 @@ void print_fonts(char *vram, int xsize, int x, int y, char c, char *s){
          putfont8(vram,xsize,x,y,c,_binary_font_bin_start + *s *16);
          x += 8;
      }
+}
+
+void init_mouse_cursor(char * mouse, char bc){
+    static char cursor[16][16] = {
+		"**************..",
+		"*OOOOOOOOOOO*...",
+		"*OOOOOOOOOO*....",
+		"*OOOOOOOOO*.....",
+		"*OOOOOOOO*......",
+		"*OOOOOOO*.......",
+		"*OOOOOOO*.......",
+		"*OOOOOOOO*......",
+		"*OOOO**OOO*.....",
+		"*OOO*..*OOO*....",
+		"*OO*....*OOO*...",
+		"*O*......*OOO*..",
+		"**........*OOO*.",
+		"*..........*OOO*",
+		"............*OO*",
+		".............***"
+    };
+
+    for(int y =0 ; y< 16 ; y++){
+        for( int x =0 ; x <16 ;x++ ){
+            if (cursor[y][x] == '*'){
+                mouse[16*y+x] = COL8_BLACK;
+            }
+            if (cursor[y][x] == 'O'){
+                mouse[16*y+x] = COL8_WHITE;
+            }
+            if (cursor[y][x] == '.'){
+                mouse[16*y+x] = bc;
+            }
+        }
+    }
+}
+
+
+void putblock8_8(char *vram,int vxsize, int pxsize,int pysize,int px0,int py0, char *buf,int bxsize){
+    for(int y = 0;y < pysize; y++){
+        for(int x = 0;x < pxsize; x++){
+            vram[(py0 + y) * vxsize + (px0 + x)] = buf[y * bxsize + x];
+            }
+    }
 }

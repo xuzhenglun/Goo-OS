@@ -1,10 +1,14 @@
 #include "bootmain.h"
 #include "graph.h"
 #include "dsctbl.h"
+#include "int.h"
 #include "../golibc/stdio.h"
+#include "basic.h"
 
 void bootmain(void) {
     init_palette();
+    init_gdtidt();
+    init_pic();
     /*-------------------INIT-PALETTE-COMPLETED-------------------------*/
 
     char * vram;
@@ -45,8 +49,9 @@ void bootmain(void) {
     init_mouse_cursor(mcursor,COL8_LD_BLUE);
     putblock8_8(vram,xsize,16,16,mx,my,mcursor,16);
 
-
-
+    sti();
+    io_out8(PIC0_IMR, 0xf9); /* PIC1とキーボードを許可(11111001) */
+    io_out8(PIC1_IMR, 0xef); /* マウスを許可(11101111) */
     /*--------------------------HLT-------------------------------------*/
     for(;;){
          hlt();

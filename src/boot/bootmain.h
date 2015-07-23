@@ -4,6 +4,8 @@
 
 #include <sys/types.h>
 
+#define ADR_BOOTINFO	0x00000ff0
+
 void hlt(void);
 void cli(void);
 void io_out8(int16_t port,int8_t date);

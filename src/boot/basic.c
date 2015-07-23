@@ -1,11 +1,15 @@
 #include "basic.h"
 
 void hlt(void){
-    __asm __volatile__("hlt");
+    __asm__ __volatile__("hlt");
 }
 
 void cli(void){
     __asm__ __volatile__("cli");
+}
+
+void sti(void){
+    __asm__ __volatile__("sti");
 }
 
 void io_out8(int16_t port,int8_t date){

@@ -1,10 +1,10 @@
-OBJS_BOOTPACK = bootasm.o bootmain.o basic.o font.o sprintf.o vsprintf.o strtoul0.o strlen.o dsctbl.o graph.o
+OBJS_BOOTPACK = bootasm.o bootmain.o basic.o font.o sprintf.o vsprintf.o strtoul0.o strlen.o dsctbl.o graph.o int.o int_asm.o
 
 INCPATH  = ./../
 
 MAKE     = make
 NASM     = nasm
-CC       = gcc -I$(INCPATH) -c -std=c99 -masm=intel -fno-pic -static -fno-builtin -fno-strict-aliasing -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pic -O -c
+CC       = gcc -O0 -I$(INCPATH) -c -std=c99 -masm=intel -fno-pic -static -fno-builtin -fno-strict-aliasing -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pic -O -c
 OBJCOPY  = objcopy
 
 
@@ -24,6 +24,9 @@ IPL.bin : ./src/boot/IPL.s
 	
 bootasm.o : ./src/boot/bootasm.s
 	$(NASM) -f elf32 ./src/boot/bootasm.s -o bootasm.o
+
+int_asm.o : ./src/boot/int_asm.s
+	$(NASM) -f elf32 ./src/boot/int_asm.s -o int_asm.o
 
 #io_out8.o : ./src/boot/io_out8.s
 	#$(NASM) -f elf32 ./src/boot/io_out8.s -o io_out8.o

@@ -51,31 +51,40 @@ void set_gatedesc(struct GATE_DESCRIPTOR *gd, int offset, int selector, int ar){
      gd->offset_high     = (offset >> 16) & 0xffff;
 }
 
-/*void load_gdtr(int limit, int addr){*/
-	/*struct {*/
-		/*unsigned int   limit;*/
-		/*unsigned int   addr;*/
-	/*} gdt,*gdtdesc;*/
-	/*gdt.limit = 0xffffffff;*/
-	/*gdt.addr  = 0x00270000;*/
-	/*gdtdesc = &gdt;*/
-    /*__asm__ (*/
-            /*"LGDT [%0-2]"*/
-			/*:*/
-			/*:"g"(gdtdesc)*/
-			/*:"memory"*/
-        /*);*/
-/*}*/
+void load_gdtr(int limit, int addr){
+    struct {
+        unsigned short null; //结构体对齐原则，需要占位
+                             //无此成员的话，limit和addr之间会有2位的填零数据
+                             //避免移位造成Magic Number，直接从定义占位
+        unsigned short limit;
+        unsigned int   addr;
+    } gdt;
+    gdt.limit = limit;
+    gdt.addr  = addr;
+    void *gdtdesc = &(gdt.limit);
+    __asm__ (
+			"LGDT [%0]"
+            :
+            :"g"(gdtdesc)
+            :"memory"
+        );
+}
 
-/*void load_idtr(int limit, int addr){*/
-    /*struct {*/
-        /*int32_t addr;*/
-        /*int16_t limit;*/
-    /*} idtdesc;*/
-    /*idtdesc.addr  = (int32_t) addr;*/
-    /*idtdesc.limit = (int16_t) limit;*/
-    /*__asm__ __volatile__(*/
-        /*"LIDT [%0]":*/
-        /*:"r"(idtdesc)*/
-    /*);*/
-/*}*/
+void load_idtr(int limit, int addr){
+    struct {
+        unsigned short null; //结构体对齐原则，需要占位
+                             //无此成员的话，limit和addr之间会有2位的填零数据
+                             //避免移位造成Magic Number，直接从定义占位
+        unsigned short limit;
+        unsigned int   addr;
+    } idt;
+    idt.limit = limit;
+    idt.addr  = addr;
+    void *idtdesc = &(idt.limit);
+    __asm__ (
+			"LIDT [%0]"
+            :
+            :"g"(idtdesc)
+            :"memory"
+        );
+}

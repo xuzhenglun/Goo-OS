@@ -9,7 +9,7 @@
 #endif
 
 #include "basic.h"
-
+#include "../golibc/stdio.h"
 #include "bootmain.h"
 #include "graph.h"
 
@@ -31,10 +31,18 @@ void init_pic(void){
     io_out8(PIC1_IMR,  0xff  );
 }
 
+#define PORT_KEYDAT		0x0060
+
 void int_handler_21(int *esp){
     struct BOOTINFO *binfo = (struct BOOTINFO *) ADR_BOOTINFO;
-    boxfill8(binfo->vram, binfo->scrnx, COL8_BLACK, 0, 0, 32 * 8 - 1, 15);
-    print_fonts(binfo->vram, binfo->scrnx, 0, 0, COL8_WHITE,"INT 21 (IRQ-1) :PS/2 keyboard");
+	
+	char data,s[4];
+	io_out8(PIC0_OCW2,0x61);
+	data = io_in8(PORT_KEYDAT);
+	
+	sprintf(s,"%02X",data);	
+    boxfill8(binfo->vram, binfo->scrnx, COL8_BLACK, 0, 25, 15, 40);
+    print_fonts(binfo->vram, binfo->scrnx, 0, 25, COL8_WHITE, s );
     while(1){
         hlt();
     }

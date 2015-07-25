@@ -12,6 +12,16 @@ void sti(void){
     __asm__ __volatile__("sti");
 }
 
+char io_in8(int16_t port){
+	char date;
+    __asm__ __volatile__(
+        "in %0,%1"
+		:"=a"(date)
+        :"d"(port)
+    );
+	return date;
+}
+
 void io_out8(int16_t port,int8_t date){
     __asm__ __volatile__(
         "out %0,%1":

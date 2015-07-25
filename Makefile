@@ -60,7 +60,7 @@ debug : goo.img
 	qemu-system-i386 -boot order=a -fda ./goo.img -m 8 -S -s
 
 run : goo.img
-	qemu-system-i386 -boot order=a -fda ./goo.img -m 256
+	qemu-system-i386 -boot order=a -fda ./goo.img -m 32
 
 clean :
 	#sudo umount ./tmp

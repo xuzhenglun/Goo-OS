@@ -60,12 +60,12 @@ seta20.2:
     or eax, 1
     mov cr0, eax
 ; 进入保护模式
-    jmp dword 8:start32
+    jmp dword 16:start32
      
 [bits 32]
 start32:
 ; 初始化非代码段寄存器
-    mov ax, 0x10
+    mov ax, 0x08
     mov ds, ax
     mov es, ax
     mov ss, ax
@@ -83,8 +83,8 @@ spin:
      
 gdt:
     dw 0x0000, 0x0000, 0x0000, 0x0000
-    dw 0xffff, 0x0000, 0x9a00, 0x00cf    ; 代码段 
     dw 0xffff, 0x0000, 0x9200, 0x00cf    ; 数据段
+	dw 0xffff, 0x0000, 0x9a00, 0x00cf    ; 代码段 
      
 gdtdesc:
     dw (gdtdesc - gdt - 1)

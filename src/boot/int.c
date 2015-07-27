@@ -41,7 +41,7 @@ void int_handler_21(int *esp){
 	data = io_in8(PORT_KEYDAT);
 	
 	sprintf(s,"%02X",data);	
-    boxfill8(binfo->vram, binfo->scrnx, COL8_BLACK, 0, 25, 80, 40);
+    boxfill8(binfo->vram, binfo->scrnx, COL8_BLACK, 0, 25, 15, 40);
     print_fonts(binfo->vram, binfo->scrnx, 0, 25, COL8_WHITE, s );
 
 }

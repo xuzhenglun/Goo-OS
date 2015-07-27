@@ -27,6 +27,8 @@
 
 void init_pic(void);
 void int_handler_21(int * esp);
+void int_handler_27(int * esp);
 void int_handler_2c(int * esp);
 void asm_int_handler_21(void);
+void asm_int_handler_27(void);
 void asm_int_handler_2c(void);

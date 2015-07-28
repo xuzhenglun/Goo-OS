@@ -56,17 +56,15 @@ void bootmain(void) {
     for(;;){
          extern struct KEYBUF keybuf;
          cli();
-         if(keybuf.next == 0)
+         if(keybuf.len == 0)
              stihlt();
          else{
-             unsigned char i = keybuf.data[0];
-             keybuf.next--;
-             for(int j = 0;j < keybuf.next; j++){
-                 keybuf.data[j] = keybuf.data[j+1];
-             }
+             keybuf.index_p = (keybuf.index_q  - keybuf.len + 32) % 32;
+             unsigned char i = keybuf.data[keybuf.index_p];
+             keybuf.len--;
              sti();
              char s[4];
-             sprintf(s ,"%02X", i);
+             sprintf(s ,"%02X", i );
              boxfill8(binfo->vram, binfo->scrnx, COL8_BLACK, 0, 25, 15, 40);
              print_fonts(binfo->vram, binfo->scrnx, 0, 25, COL8_WHITE, s );
          }

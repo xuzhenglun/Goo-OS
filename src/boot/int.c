@@ -40,9 +40,12 @@ void int_handler_21(int *esp){
 	io_out8(PIC0_OCW2,0x61);
 	data = io_in8(PORT_KEYDAT);
 
-    if(keybuf.next < 32){
-        keybuf.data[keybuf.next] = data;
-        keybuf.next++;
+    if(keybuf.len < 32){
+        keybuf.data[keybuf.index_q++] = data;
+        keybuf.len++;
+        if(keybuf.index_q == 32){
+             keybuf.index_q = 0;
+        }
     }
 
 }

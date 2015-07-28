@@ -27,7 +27,7 @@
 
 struct KEYBUF {
     unsigned char data[32];
-    int next;
+    int index_p,index_q,len;
 } keybuf;
 
 void init_pic(void);

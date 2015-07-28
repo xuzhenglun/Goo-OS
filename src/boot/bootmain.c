@@ -54,7 +54,19 @@ void bootmain(void) {
     io_out8(PIC1_IMR, 0xef); /* マウスを許可(11101111) */
     /*--------------------------HLT-------------------------------------*/
     for(;;){
-         hlt();
+         extern struct KEYBUF keybuf;
+         cli();
+         if(keybuf.flag == 0)
+             stihlt();
+         else{
+             unsigned char i = keybuf.data;
+             keybuf.flag = 0;
+             sti();
+             char s[4];
+             sprintf(s ,"%02X", i);
+             boxfill8(binfo->vram, binfo->scrnx, COL8_BLACK, 0, 25, 15, 40);
+             print_fonts(binfo->vram, binfo->scrnx, 0, 25, COL8_WHITE, s );
+         }
     }
 }
 

@@ -35,14 +35,15 @@ void init_pic(void){
 
 void int_handler_21(int *esp){
     struct BOOTINFO *binfo = (struct BOOTINFO *) ADR_BOOTINFO;
-	
+
 	char data,s[4];
 	io_out8(PIC0_OCW2,0x61);
 	data = io_in8(PORT_KEYDAT);
-	
-	sprintf(s,"%02X",data);	
-    boxfill8(binfo->vram, binfo->scrnx, COL8_BLACK, 0, 25, 15, 40);
-    print_fonts(binfo->vram, binfo->scrnx, 0, 25, COL8_WHITE, s );
+
+    if(keybuf.flag == 0){
+        keybuf.data = data;
+        keybuf.flag = 1;
+    }
 
 }
 

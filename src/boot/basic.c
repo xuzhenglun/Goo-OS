@@ -47,4 +47,10 @@ void io_store_eflags(int eflags){
     );
 }
 
+void stihlt(void){
+    __asm__ __volatile__(
+        "STI\n\r"
+        "HLT"
+    );
+}
 

@@ -25,6 +25,10 @@
 
 #include "basic.h"
 
+struct KEYBUF {
+    unsigned char data,flag;
+} keybuf;
+
 void init_pic(void);
 void int_handler_21(int * esp);
 void int_handler_27(int * esp);

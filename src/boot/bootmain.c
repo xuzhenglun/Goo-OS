@@ -56,11 +56,14 @@ void bootmain(void) {
     for(;;){
          extern struct KEYBUF keybuf;
          cli();
-         if(keybuf.flag == 0)
+         if(keybuf.next == 0)
              stihlt();
          else{
-             unsigned char i = keybuf.data;
-             keybuf.flag = 0;
+             unsigned char i = keybuf.data[0];
+             keybuf.next--;
+             for(int j = 0;j < keybuf.next; j++){
+                 keybuf.data[j] = keybuf.data[j+1];
+             }
              sti();
              char s[4];
              sprintf(s ,"%02X", i);

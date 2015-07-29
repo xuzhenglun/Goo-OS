@@ -25,10 +25,8 @@
 
 #include "basic.h"
 
-struct KEYBUF {
-    unsigned char data[32];
-    int index_p,index_q,len;
-} keybuf;
+#include "fifo.h"
+struct FIFO8 keyfifo;
 
 void init_pic(void);
 void int_handler_21(int * esp);

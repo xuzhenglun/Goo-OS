@@ -49,19 +49,19 @@ void bootmain(void) {
     init_mouse_cursor(mcursor,COL8_LD_BLUE);
     putblock8_8(vram,xsize,16,16,mx,my,mcursor,16);
 
+    char keybuf[32];
+    fifo8_init(&keyfifo, 32, keybuf);
+
     sti();
     io_out8(PIC0_IMR, 0xf9); /* PIC1とキーボードを許可(11111001) */
     io_out8(PIC1_IMR, 0xef); /* マウスを許可(11101111) */
     /*--------------------------HLT-------------------------------------*/
     for(;;){
-         extern struct KEYBUF keybuf;
          cli();
-         if(keybuf.len == 0)
+         if(fifo8_status(&keyfifo) == 0)
              stihlt();
          else{
-             keybuf.index_p = (keybuf.index_q  - keybuf.len + 32) % 32;
-             unsigned char i = keybuf.data[keybuf.index_p];
-             keybuf.len--;
+             unsigned char i = fifo8_get(&keyfifo);
              sti();
              char s[4];
              sprintf(s ,"%02X", i );

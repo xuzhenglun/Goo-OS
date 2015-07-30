@@ -49,8 +49,12 @@ void bootmain(void) {
     init_mouse_cursor(mcursor,COL8_LD_BLUE);
     putblock8_8(vram,xsize,16,16,mx,my,mcursor,16);
 
-    char keybuf[32];
-    fifo8_init(&keyfifo, 32, keybuf);
+    init_keyboard();
+    enable_mouse();
+
+    char keybuf[32],mousebuf[1024];
+    fifo8_init(&keyfifo,   32,  keybuf  );
+    fifo8_init(&mousefifo, 1024, mousebuf);
 
     sti();
     io_out8(PIC0_IMR, 0xf9); /* PIC1とキーボードを許可(11111001) */
@@ -68,6 +72,18 @@ void bootmain(void) {
              boxfill8(binfo->vram, binfo->scrnx, COL8_BLACK, 0, 25, 15, 40);
              print_fonts(binfo->vram, binfo->scrnx, 0, 25, COL8_WHITE, s );
          }
+         cli();
+         if(fifo8_status(&mousefifo) == 0)
+             stihlt();
+         else{
+             unsigned char i = fifo8_get(&mousefifo);
+             sti();
+             char s[4];
+             sprintf(s ,"%02X", i );
+             boxfill8(binfo->vram, binfo->scrnx, COL8_BLACK, 32, 25, 47, 40);
+             print_fonts(binfo->vram, binfo->scrnx, 32, 25, COL8_WHITE, s );
+         }
+
     }
 }
 

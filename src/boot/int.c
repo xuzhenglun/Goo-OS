@@ -34,12 +34,8 @@ void init_pic(void){
 #define PORT_KEYDAT		0x0060
 
 void int_handler_21(int *esp){
-    struct BOOTINFO *binfo = (struct BOOTINFO *) ADR_BOOTINFO;
-
-	char data,s[4];
 	io_out8(PIC0_OCW2,0x61);
-	data = io_in8(PORT_KEYDAT);
-
+	unsigned char data = io_in8(PORT_KEYDAT);
     fifo8_put(&keyfifo,data);
 }
 
@@ -56,8 +52,27 @@ void int_handler_27(int *esp)
 }
 
 void int_handler_2c(int *esp){
-    struct BOOTINFO *binfo = (struct BOOTINFO *) ADR_BOOTINFO;
-    boxfill8(binfo->vram, binfo->scrnx, COL8_BLACK, 0, 0, 32 * 8 - 1, 15);
-    print_fonts(binfo->vram, binfo->scrnx, 0, 0, COL8_WHITE,"INT 2c (IRQ-1) :MOUSE");
+    unsigned char data;
+    io_out8(PIC1_OCW2, 0x64);
+    io_out8(PIC0_OCW2, 0x62);
+    data = io_in8(PORT_KEYDAT);
+    fifo8_put(&mousefifo, data);
+}
 
+void wait_KBC_sendready(void){
+    while(io_in8(PORT_KEYSTA) & KEYSTA_SEND_NOTREADY);
+}
+
+void init_keyboard(void){
+    wait_KBC_sendready();
+    io_out8(PORT_KEYCMD, KEYCMD_WRITE_MODE);
+    wait_KBC_sendready();
+    io_out8(PORT_KEYDAT, KBC_MODE);
+}
+
+void enable_mouse(void){
+     wait_KBC_sendready();
+     io_out8(PORT_KEYCMD, KEYCMD_SENDTO_MOUSE);
+     wait_KBC_sendready();
+     io_out8(PORT_KEYDAT, MOUSECMD_ENABLE);
 }

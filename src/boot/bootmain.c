@@ -59,31 +59,36 @@ void bootmain(void) {
     sti();
     io_out8(PIC0_IMR, 0xf9); /* PIC1とキーボードを許可(11111001) */
     io_out8(PIC1_IMR, 0xef); /* マウスを許可(11101111) */
-    /*--------------------------HLT-------------------------------------*/
-    for(;;){
-         cli();
-         if(fifo8_status(&keyfifo) == 0)
-             stihlt();
-         else{
-             unsigned char i = fifo8_get(&keyfifo);
-             sti();
-             char s[4];
-             sprintf(s ,"%02X", i );
-             boxfill8(binfo->vram, binfo->scrnx, COL8_BLACK, 0, 25, 15, 40);
-             print_fonts(binfo->vram, binfo->scrnx, 0, 25, COL8_WHITE, s );
-         }
-         cli();
-         if(fifo8_status(&mousefifo) == 0)
-             stihlt();
-         else{
-             unsigned char i = fifo8_get(&mousefifo);
-             sti();
-             char s[4];
-             sprintf(s ,"%02X", i );
-             boxfill8(binfo->vram, binfo->scrnx, COL8_BLACK, 32, 25, 47, 40);
-             print_fonts(binfo->vram, binfo->scrnx, 32, 25, COL8_WHITE, s );
-         }
 
+    int kflag,mflag;
+
+    for(;;){
+        kflag = fifo8_status(&keyfifo);
+        mflag = fifo8_status(&mousefifo);
+        if( kflag || mflag ){
+            cli();
+            if(kflag)
+            {
+              unsigned char i = fifo8_get(&keyfifo);
+              sti();
+              char s[4];
+              sprintf(s ,"%02X", i );
+              boxfill8(binfo->vram, binfo->scrnx, COL8_BLACK, 0, 25, 15, 40);
+              print_fonts(binfo->vram, binfo->scrnx, 0, 25, COL8_WHITE, s );
+             }
+            cli();
+            if(mflag)
+            {
+                unsigned char i = fifo8_get(&mousefifo);
+                sti();
+                char s[4];
+                sprintf(s ,"%02X", i );
+                boxfill8(binfo->vram, binfo->scrnx, COL8_BLACK, 32, 25, 47, 40);
+                print_fonts(binfo->vram, binfo->scrnx, 32, 25, COL8_WHITE, s );
+            }
+        }
+        else
+        stihlt();
     }
 }
 

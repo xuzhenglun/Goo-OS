@@ -60,7 +60,8 @@ void bootmain(void) {
     io_out8(PIC0_IMR, 0xf9); /* PIC1とキーボードを許可(11111001) */
     io_out8(PIC1_IMR, 0xef); /* マウスを許可(11101111) */
 
-    int kflag,mflag;
+    int kflag,mflag,mouse_phase;
+    unsigned char mouse_dbuff[3];
 
     for(;;){
         kflag = fifo8_status(&keyfifo);
@@ -81,9 +82,34 @@ void bootmain(void) {
             {
                 unsigned char i = fifo8_get(&mousefifo);
                 sti();
-                char s[4];
-                sprintf(s ,"%02X", i );
-                boxfill8(binfo->vram, binfo->scrnx, COL8_BLACK, 32, 25, 47, 40);
+                switch(mouse_phase){
+                    case 0:
+                        {
+                            if(i == 0xfa) mouse_phase = 1;
+                            break;
+                        }
+                    case 1:
+                        {
+                            mouse_dbuff[0] = i;
+                            mouse_phase  = 2;
+                            break;
+                        }
+                    case 2:
+                        {
+                            mouse_dbuff[1] = i;
+                            mouse_phase   = 3;
+                            break;
+                        }
+                    case 3:
+                        {
+                            mouse_dbuff[2] = i;
+                            mouse_phase   = 1;\
+                            break;
+                        }
+                }
+                char s[10];
+                sprintf(s ,"%02X %02X %02X", mouse_dbuff[0], mouse_dbuff[1], mouse_dbuff[2]);
+                boxfill8(binfo->vram, binfo->scrnx, COL8_BLACK, 32, 25, 32+8*8-1, 40);
                 print_fonts(binfo->vram, binfo->scrnx, 32, 25, COL8_WHITE, s );
             }
         }

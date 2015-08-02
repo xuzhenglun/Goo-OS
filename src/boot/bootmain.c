@@ -97,6 +97,18 @@ void bootmain(void) {
                         s[2] = 'C';
                     boxfill8(binfo->vram, binfo->scrnx, COL8_BLACK, 32, 40, 32+15*8-1, 55);
                     print_fonts(binfo->vram, binfo->scrnx, 32, 40, COL8_WHITE, s );
+
+                    boxfill8(vram,xsize,COL8_LD_BLUE ,mx ,my, mx+15, my+15);
+                    mx += mdec.x;
+                    my += mdec.y;
+                    if(mx < 0) mx = 0;
+                    if(mx > xsize - 16) mx = xsize - 16;
+                    if(my < 0) my = 0;
+                    if(my > ysize - 16) my = ysize - 16;
+                    sprintf(s,"(%3d,%3d)",mx,my);
+                    boxfill8(binfo->vram, binfo->scrnx, COL8_BLACK, 32, 55, 32+79, 70);
+                    print_fonts(binfo->vram, binfo->scrnx, 32, 55, COL8_WHITE, s );
+                    putblock8_8(vram,xsize,16,16,mx,my,mcursor,16);
                 }
             }
         }

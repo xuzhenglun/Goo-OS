@@ -49,9 +49,6 @@ void bootmain(void) {
     init_mouse_cursor(mcursor,COL8_LD_BLUE);
     putblock8_8(vram,xsize,16,16,mx,my,mcursor,16);
 
-    init_keyboard();
-    enable_mouse();
-
     char keybuf[32],mousebuf[1024];
     fifo8_init(&keyfifo,   32,  keybuf  );
     fifo8_init(&mousefifo, 1024, mousebuf);
@@ -60,8 +57,11 @@ void bootmain(void) {
     io_out8(PIC0_IMR, 0xf9); /* PIC1とキーボードを許可(11111001) */
     io_out8(PIC1_IMR, 0xef); /* マウスを許可(11101111) */
 
-    int kflag,mflag,mouse_phase;
+    int kflag,mflag;
     unsigned char mouse_dbuff[3];
+    struct MOUSE_DEC mdec;
+    init_keyboard();
+    enable_mouse(&mdec);
 
     for(;;){
         kflag = fifo8_status(&keyfifo);
@@ -82,35 +82,22 @@ void bootmain(void) {
             {
                 unsigned char i = fifo8_get(&mousefifo);
                 sti();
-                switch(mouse_phase){
-                    case 0:
-                        {
-                            if(i == 0xfa) mouse_phase = 1;
-                            break;
-                        }
-                    case 1:
-                        {
-                            mouse_dbuff[0] = i;
-                            mouse_phase  = 2;
-                            break;
-                        }
-                    case 2:
-                        {
-                            mouse_dbuff[1] = i;
-                            mouse_phase   = 3;
-                            break;
-                        }
-                    case 3:
-                        {
-                            mouse_dbuff[2] = i;
-                            mouse_phase   = 1;\
-                            break;
-                        }
+                if(mouse_decode(&mdec, i) != 0){
+                    char s[30];
+                    sprintf(s ,"%02X %02X %02X", mdec.buf[0],mdec.buf[1],mdec.buf[2]);
+                    boxfill8(binfo->vram, binfo->scrnx, COL8_BLACK, 32, 25, 32+8*8-1, 40);
+                    print_fonts(binfo->vram, binfo->scrnx, 32, 25, COL8_WHITE, s );
+
+                    sprintf(s, "[lcr,%4d,%4d]",mdec.x,mdec.y);
+                    if((mdec.btn & 0x01) != 0)
+                        s[1] = 'L';
+                    if((mdec.btn & 0x02) != 0)
+                        s[3] = 'R';
+                    if((mdec.btn & 0x04) != 0)
+                        s[2] = 'C';
+                    boxfill8(binfo->vram, binfo->scrnx, COL8_BLACK, 32, 40, 32+15*8-1, 55);
+                    print_fonts(binfo->vram, binfo->scrnx, 32, 40, COL8_WHITE, s );
                 }
-                char s[10];
-                sprintf(s ,"%02X %02X %02X", mouse_dbuff[0], mouse_dbuff[1], mouse_dbuff[2]);
-                boxfill8(binfo->vram, binfo->scrnx, COL8_BLACK, 32, 25, 32+8*8-1, 40);
-                print_fonts(binfo->vram, binfo->scrnx, 32, 25, COL8_WHITE, s );
             }
         }
         else

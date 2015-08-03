@@ -1,3 +1,5 @@
+#define MEMMAN_ADDR 0x003c0000
+
 #include "bootmain.h"
 #include "graph.h"
 #include "dsctbl.h"
@@ -64,9 +66,16 @@ void bootmain(void) {
     init_keyboard();
     enable_mouse(&mdec);
 
-    unsigned int i = memtest(0x00400000, 0xbfffffff) / (1024 * 1024);
-    sprintf(s," | MEMORY: %dMB",i);
+
+    unsigned int memtotal;
+    struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
+    memtotal = memtest(0x00400000, 0xbfffffff);
+    mem_init(memman);
+    mem_free(memman, 0x00300000,memtotal - 0x00300000);
+    sprintf(s,"| MEMORY:%dMB|FREE:%dKB",memtotal /(1024*1024),mem_total(memman)/1024);
     print_fonts(vram,xsize,80,8,COL8_WHITE,s);
+
+
 
     for(;;){
         kflag = fifo8_status(&keyfifo);

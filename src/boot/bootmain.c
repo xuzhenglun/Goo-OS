@@ -4,6 +4,7 @@
 #include "int.h"
 #include "../golibc/stdio.h"
 #include "basic.h"
+#include "memory.h"
 
 void bootmain(void) {
     init_palette();
@@ -62,6 +63,10 @@ void bootmain(void) {
     struct MOUSE_DEC mdec;
     init_keyboard();
     enable_mouse(&mdec);
+
+    unsigned int i = memtest(0x00400000, 0xbfffffff) / (1024 * 1024);
+    sprintf(s," | MEMORY: %dMB",i);
+    print_fonts(vram,xsize,80,8,COL8_WHITE,s);
 
     for(;;){
         kflag = fifo8_status(&keyfifo);

@@ -13,3 +13,5 @@ int  io_load_eflags(void);
 void io_store_eflags(int eflags);
 void int_test(void);
 void stihlt(void);
+int load_cr0(void);
+void store_cr0(int cr0);

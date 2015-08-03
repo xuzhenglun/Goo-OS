@@ -54,3 +54,18 @@ void stihlt(void){
     );
 }
 
+int load_cr0(void){
+    int cr0;
+    __asm__ __volatile__(
+        "MOV %0,CR0"
+        :"=r"(cr0)
+        );
+    return cr0;
+}
+
+void store_cr0(int cr0){
+    __asm__ __volatile__(
+        "MOV CR0,%0":
+        :"r"(cr0)
+        );
+}

@@ -16,15 +16,15 @@ void bootmain(void) {
     init_palette();
     init_gdtidt();
     init_pic();
-	
+
     struct BOOTINFO *binfo;						//从内存中找到在IPL中保存的图形参数
     binfo = (struct BOOTINFO *) 0x0ff0;
     char s[40];									//文字输出缓存，（在栈中）
-	
+
     char keybuf[32],mousebuf[128];				//鼠标和键盘中断缓存，（在栈中）
     fifo8_init(&keyfifo,   32,  keybuf  );
     fifo8_init(&mousefifo, 128, mousebuf);
-	
+
 	unsigned int memtotal;                      //内存初始化
     struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR; //内存管理块的内存位置
     memtotal = memtest(0x00400000, 0xbfffffff); //总内存大小
@@ -40,12 +40,12 @@ void bootmain(void) {
     layer_setbuf(lay_back,buf_back,binfo->scrnx,binfo->scrny,-1); 			//设定背景层
     layer_setbuf(lay_mouse,buf_mouse,16,16,99);								//设定鼠标层（透明色为99）
 
-	
+
 	init_screen8(buf_back, binfo->scrnx,binfo->scrny); 						//画一下桌面
-	
+
     sprintf(s,"| MEMORY:%dMB|FREE:%dKB",memtotal /(1024*1024),mem_total(memman)/1024); //输出内存消息
     print_fonts(buf_back ,binfo->scrnx,80,8,COL8_WHITE,s);
-	
+
     sprintf(s,"%d * %d ",binfo->scrnx,binfo->scrny);									//输出屏幕分辨率
     print_fonts(buf_back ,binfo->scrnx,8,8,COL8_WHITE,s);
 
@@ -69,14 +69,14 @@ void bootmain(void) {
     init_keyboard();
     enable_mouse(&mdec);
 
-	layer_refresh(layctl);
+    layer_refresh(layctl,lay_back,0,0,binfo->scrnx,48);
 
     for(;;){
         kflag = fifo8_status(&keyfifo);
         mflag = fifo8_status(&mousefifo);
         if( kflag || mflag ){                                                //键盘或者鼠标的中断缓存有数据的时候进入
             cli();														     //屏蔽中断
-            if(kflag)														//键盘部分
+            if(kflag)													   	//键盘部分
             {
               unsigned char i = fifo8_get(&keyfifo);
               sti();
@@ -84,7 +84,7 @@ void bootmain(void) {
               sprintf(s ,"%02X", i );
               boxfill8(buf_back, binfo->scrnx, COL8_BLACK, 0, 25, 15, 40);
               print_fonts(buf_back, binfo->scrnx, 0, 25, COL8_WHITE, s );
-			  layer_refresh(layctl);
+              layer_refresh(layctl,lay_back,0,25,15,40);
              }
             cli();
             if(mflag)															//鼠标部分
@@ -96,6 +96,7 @@ void bootmain(void) {
                     sprintf(s ,"%02X %02X %02X", mdec.buf[0],mdec.buf[1],mdec.buf[2]);
                     boxfill8(buf_back, binfo->scrnx, COL8_BLACK, 32, 25, 32+8*8-1, 40);
                     print_fonts(buf_back, binfo->scrnx, 32, 25, COL8_WHITE, s );  //先输出RAW数据压压惊
+                    layer_refresh(layctl, lay_back,32,25,32+8*8,41);  //鼠标三个按键的解码
 
                     sprintf(s, "[lcr,%4d,%4d]",mdec.x,mdec.y);
                     if((mdec.btn & 0x01) != 0)
@@ -105,7 +106,9 @@ void bootmain(void) {
                     if((mdec.btn & 0x04) != 0)
                         s[2] = 'C';
                     boxfill8(buf_back, binfo->scrnx, COL8_BLACK, 32, 40, 32+15*8-1, 55);
-                    print_fonts(buf_back, binfo->scrnx, 32, 40, COL8_WHITE, s );  //鼠标三个按键的解码
+                    print_fonts(buf_back, binfo->scrnx, 32, 40, COL8_WHITE, s );
+                    layer_refresh(layctl, lay_back,32,40,32+15*8-1,55);  //鼠标三个按键的解码
+
                     mx += mdec.x;
                     my += mdec.y;
                     if(mx < 0) mx = 0;
@@ -115,7 +118,8 @@ void bootmain(void) {
                     sprintf(s,"(%3d,%3d)",mx,my);
                     boxfill8(buf_back, binfo->scrnx, COL8_BLACK, 32, 55, 32+79, 70);
                     print_fonts(buf_back, binfo->scrnx, 32, 55, COL8_WHITE, s );  //输出（X,Y）偏移
-					layer_slide(layctl,lay_mouse,mx,my);						  //偏移鼠标层以移动光标
+                    layer_refresh(layctl,lay_back,32,55,32+79,70);
+                    layer_slide(layctl,lay_mouse,mx,my);						  //偏移鼠标层以移动光标
                 }
             }
         }

@@ -1,3 +1,6 @@
+#ifndef LAYER_H_H
+#define LAYER_H_H
+
 #include "memory.h"
 
 #define MAX_LAYERS 256
@@ -23,8 +26,12 @@ void layer_setbuf(struct LAYER *lay, unsigned char *buf, int xsize, int ysize, i
 
 void layer_updown(struct LAYER_CTL * ctl, struct LAYER * lay, int height);
 
-void layer_refresh(struct LAYER_CTL *ctl);
+void layer_refresh(struct LAYER_CTL *ctl,struct LAYER * lay, int bx0, int by0, int bx1, int by1);
 
 void layer_slide(struct LAYER_CTL *ctl,struct LAYER * lay, int vx0, int vy0);
 
 void layer_free(struct LAYER_CTL *ctl, struct LAYER *lay);
+
+void layer_refresh_sub(struct LAYER_CTL *ctl, int vx0, int vy0, int vx1, int vy1);
+
+#endif

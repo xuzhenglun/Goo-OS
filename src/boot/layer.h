@@ -9,6 +9,7 @@
 struct LAYER{
     unsigned char *buf;
     int bxsize,bysize,vx0,vy0,col_inv,height,flags;
+    struct LAYER_CTL *ctl;
 };
 
 struct LAYER_CTL {
@@ -24,13 +25,13 @@ struct LAYER * layer_alloc(struct LAYER_CTL *ctl);
 
 void layer_setbuf(struct LAYER *lay, unsigned char *buf, int xsize, int ysize, int col_inv);
 
-void layer_updown(struct LAYER_CTL * ctl, struct LAYER * lay, int height);
+void layer_updown(struct LAYER * lay, int height);
 
-void layer_refresh(struct LAYER_CTL *ctl,struct LAYER * lay, int bx0, int by0, int bx1, int by1);
+void layer_refresh(struct LAYER * lay, int bx0, int by0, int bx1, int by1);
 
-void layer_slide(struct LAYER_CTL *ctl,struct LAYER * lay, int vx0, int vy0);
+void layer_slide(struct LAYER * lay, int vx0, int vy0);
 
-void layer_free(struct LAYER_CTL *ctl, struct LAYER *lay);
+void layer_free(struct LAYER *lay);
 
 void layer_refresh_sub(struct LAYER_CTL *ctl, int vx0, int vy0, int vx1, int vy1);
 

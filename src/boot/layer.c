@@ -12,6 +12,7 @@ struct LAYER_CTL * layer_ctl_init(struct MEMMAN *man, unsigned char *vram, int x
     ctl->top = -1;
     for( int i = 0; i < MAX_LAYERS; i++ ){
         ctl->layers[i].flags = 0;
+        ctl->layers[i].ctl   = ctl;
     }
     return ctl;
 }
@@ -37,7 +38,8 @@ void layer_setbuf(struct LAYER *lay, unsigned char *buf, int xsize, int ysize, i
     return;
 }
 
-void layer_updown(struct LAYER_CTL * ctl, struct LAYER * lay, int height){
+void layer_updown(struct LAYER * lay, int height){
+    struct LAYER_CTL *ctl = lay->ctl;
     int h,old = lay->height;
 
     if(height > ctl->top + 1){
@@ -64,7 +66,7 @@ void layer_updown(struct LAYER_CTL * ctl, struct LAYER * lay, int height){
             }
             ctl->top--;
         }
-        layer_refresh_sub(ctl,lay->vx0,lay->vy0,lay->vx0 + lay->bxsize, lay->vy0 + lay->bysize);
+        layer_refresh_sub(lay->ctl,lay->vx0,lay->vy0,lay->vx0 + lay->bxsize, lay->vy0 + lay->bysize);
     }else if(old < height){
         if(old >= 0){
             for(h = old; h < height; h++){
@@ -80,31 +82,31 @@ void layer_updown(struct LAYER_CTL * ctl, struct LAYER * lay, int height){
             ctl->layers_p[height] = lay;
             ctl->top++;
         }
-        layer_refresh_sub(ctl,lay->vx0,lay->vy0,lay->vx0 + lay->bxsize, lay->vy0 + lay->bysize);
+        layer_refresh_sub(lay->ctl,lay->vx0,lay->vy0,lay->vx0 + lay->bxsize, lay->vy0 + lay->bysize);
     }
     return;
 }
 
-void layer_refresh(struct LAYER_CTL *ctl,struct LAYER * lay, int bx0, int by0, int bx1, int by1){
+void layer_refresh(struct LAYER * lay, int bx0, int by0, int bx1, int by1){
     if( lay->height >= 0 ){
-        layer_refresh_sub(ctl, lay->vx0 + bx0, lay->vy0 + by0, lay->vx0 + bx1 + 1, lay->vy0 + by1 + 1);
+        layer_refresh_sub(lay->ctl, lay->vx0 + bx0, lay->vy0 + by0, lay->vx0 + bx1 + 1, lay->vy0 + by1 + 1);
     }
 }
 
-void layer_slide(struct LAYER_CTL *ctl,struct LAYER * lay, int vx0, int vy0){
+void layer_slide(struct LAYER * lay, int vx0, int vy0){
      int old_vx0 = lay->vx0;
      int old_vy0 = lay->vy0;
      lay->vx0 = vx0;
      lay->vy0 = vy0;
      if(lay->height >= 0){
-         layer_refresh_sub(ctl,old_vx0,old_vy0,old_vx0 + lay->bxsize,old_vy0 + lay->bysize);
-         layer_refresh_sub(ctl,vx0,vy0,vx0 + lay->bxsize, vy0 + lay->bysize);
+         layer_refresh_sub(lay->ctl,old_vx0,old_vy0,old_vx0 + lay->bxsize,old_vy0 + lay->bysize);
+         layer_refresh_sub(lay->ctl,vx0,vy0,vx0 + lay->bxsize, vy0 + lay->bysize);
      }
 }
 
-void layer_free(struct LAYER_CTL *ctl, struct LAYER *lay){
+void layer_free(struct LAYER *lay){
     if(lay->height >= 0){
-        layer_updown(ctl,lay,-1);
+        layer_updown(lay,-1);
     }
     lay->flags = 0;
 }

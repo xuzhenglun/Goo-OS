@@ -54,10 +54,10 @@ void bootmain(void) {
     my = (binfo->scrny - 28 - 16) / 2;
     init_mouse_cursor(buf_mouse,99);												//在鼠标层写入图形数据
 
-	layer_slide(layctl,lay_back,0,0);												//把背景层偏移搭到（0，0）
-	layer_slide(layctl,lay_mouse,mx,my);											//把鼠标层偏移到中间位置
-	layer_updown(layctl,lay_back,0);												//设定背景层为0层
-	layer_updown(layctl,lay_mouse,1);												//设定鼠标层为1层
+	layer_slide(lay_back,0,0);												//把背景层偏移搭到（0，0）
+	layer_slide(lay_mouse,mx,my);											//把鼠标层偏移到中间位置
+	layer_updown(lay_back,0);												//设定背景层为0层
+	layer_updown(lay_mouse,1);												//设定鼠标层为1层
 
     sti();
     io_out8(PIC0_IMR, 0xf9); /* PIC1とキーボードを許可(11111001) */					//开始接受鼠标和键盘中断
@@ -69,7 +69,7 @@ void bootmain(void) {
     init_keyboard();
     enable_mouse(&mdec);
 
-    layer_refresh(layctl,lay_back,0,0,binfo->scrnx,48);
+    layer_refresh(lay_back,0,0,binfo->scrnx,48);
 
     for(;;){
         kflag = fifo8_status(&keyfifo);
@@ -84,7 +84,7 @@ void bootmain(void) {
               sprintf(s ,"%02X", i );
               boxfill8(buf_back, binfo->scrnx, COL8_BLACK, 0, 25, 15, 40);
               print_fonts(buf_back, binfo->scrnx, 0, 25, COL8_WHITE, s );
-              layer_refresh(layctl,lay_back,0,25,15,40);
+              layer_refresh(lay_back,0,25,15,40);
              }
             cli();
             if(mflag)															//鼠标部分
@@ -96,7 +96,7 @@ void bootmain(void) {
                     sprintf(s ,"%02X %02X %02X", mdec.buf[0],mdec.buf[1],mdec.buf[2]);
                     boxfill8(buf_back, binfo->scrnx, COL8_BLACK, 32, 25, 32+8*8-1, 40);
                     print_fonts(buf_back, binfo->scrnx, 32, 25, COL8_WHITE, s );  //先输出RAW数据压压惊
-                    layer_refresh(layctl, lay_back,32,25,32+8*8,41);  //鼠标三个按键的解码
+                    layer_refresh(lay_back,32,25,32+8*8,41);  //鼠标三个按键的解码
 
                     sprintf(s, "[lcr,%4d,%4d]",mdec.x,mdec.y);
                     if((mdec.btn & 0x01) != 0)
@@ -107,19 +107,19 @@ void bootmain(void) {
                         s[2] = 'C';
                     boxfill8(buf_back, binfo->scrnx, COL8_BLACK, 32, 40, 32+15*8-1, 55);
                     print_fonts(buf_back, binfo->scrnx, 32, 40, COL8_WHITE, s );
-                    layer_refresh(layctl, lay_back,32,40,32+15*8-1,55);  //鼠标三个按键的解码
+                    layer_refresh(lay_back,32,40,32+15*8-1,55);  //鼠标三个按键的解码
 
                     mx += mdec.x;
                     my += mdec.y;
                     if(mx < 0) mx = 0;
-                    if(mx > binfo->scrnx - 16) mx = binfo->scrnx - 16;
+                    if(mx > binfo->scrnx - 1) mx = binfo->scrnx - 1;
                     if(my < 0) my = 0;
-                    if(my > binfo->scrny - 16) my = binfo->scrny - 16;			  //鼠标（X,Y）解码
+                    if(my > binfo->scrny - 1) my = binfo->scrny - 1;			  //鼠标（X,Y）解码
                     sprintf(s,"(%3d,%3d)",mx,my);
                     boxfill8(buf_back, binfo->scrnx, COL8_BLACK, 32, 55, 32+79, 70);
                     print_fonts(buf_back, binfo->scrnx, 32, 55, COL8_WHITE, s );  //输出（X,Y）偏移
-                    layer_refresh(layctl,lay_back,32,55,32+79,70);
-                    layer_slide(layctl,lay_mouse,mx,my);						  //偏移鼠标层以移动光标
+                    layer_refresh(lay_back,32,55,32+79,70);
+                    layer_slide(lay_mouse,mx,my);						  //偏移鼠标层以移动光标
                 }
             }
         }

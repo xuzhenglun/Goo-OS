@@ -124,3 +124,23 @@ void putblock8_8(char *vram,int vxsize, int pxsize,int pysize,int px0,int py0, c
             }
     }
 }
+
+void init_screen8(char * vram, int xsize,int ysize){
+	boxfill8(vram ,xsize,COL8_LD_BLUE     ,0          ,0          ,xsize -1  ,ysize - 29 );
+    boxfill8(vram ,xsize,COL8_GREY        ,0          ,ysize - 28 ,xsize -1  ,ysize - 28 );
+    boxfill8(vram ,xsize,COL8_WHITE       ,0          ,ysize - 27 ,xsize -1  ,ysize - 27 );
+    boxfill8(vram ,xsize,COL8_GREY        ,0          ,ysize - 26 ,xsize -1  ,ysize - 1  );
+
+    boxfill8(vram ,xsize,COL8_WHITE       ,3          ,ysize - 24 ,59        ,ysize - 24 );
+    boxfill8(vram ,xsize,COL8_WHITE       ,2          ,ysize - 24 ,2         ,ysize - 4  );
+    boxfill8(vram ,xsize,COL8_D_GREY      ,3          ,ysize - 4  ,59        ,ysize - 4  );
+    boxfill8(vram ,xsize,COL8_D_GREY      ,59         ,ysize - 23 ,59        ,ysize - 5  );
+    boxfill8(vram ,xsize,COL8_BLACK       ,2          ,ysize - 3  ,59        ,ysize - 3  );
+    boxfill8(vram ,xsize,COL8_BLACK       ,60         ,ysize - 24 ,60        ,ysize - 3  );
+
+    boxfill8(vram ,xsize,COL8_D_GREY      ,xsize - 47 ,ysize - 24 ,xsize - 4 ,ysize - 24 );
+    boxfill8(vram ,xsize,COL8_D_GREY      ,xsize - 47 ,ysize - 23 ,xsize - 47,ysize - 4  );
+    boxfill8(vram ,xsize,COL8_WHITE       ,xsize - 47 ,ysize - 3  ,xsize - 3 ,ysize - 3  );
+    boxfill8(vram ,xsize,COL8_WHITE       ,xsize - 3  ,ysize - 24 ,xsize - 3 ,ysize - 3  );
+
+}

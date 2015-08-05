@@ -1,3 +1,6 @@
+#ifndef MEMORY_H_H
+#define MEMORY_H_H
+
 #define    EFLAGS_AC_BIT     0x00040000
 #define    CR0_CACHE_DISABLE 0x60000000
 #define    MEMMAN_FREES      4090
@@ -17,3 +20,7 @@ void mem_init(struct MEMMAN *man);
 unsigned int mem_total(struct MEMMAN *man);
 unsigned int mem_alloc(struct MEMMAN *man, unsigned int size);
 int mem_free(struct MEMMAN *man, unsigned int addr,unsigned int size);
+unsigned int mem_alloc_4k(struct MEMMAN *man, unsigned int size);
+int mem_free_4k(struct MEMMAN *man, unsigned int addr,unsigned int size);
+
+#endif

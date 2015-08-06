@@ -38,16 +38,14 @@ void bootmain(void) {
     lay_win   = layer_alloc(layctl);                                        //创建窗口层
     buf_back = (unsigned char *) mem_alloc_4k(memman,binfo->scrnx * binfo->scrny);
     buf_mouse = (unsigned char *) mem_alloc_4k(memman,16*16);
-    buf_win   = (unsigned char *) mem_alloc_4k(memman,160 * 68);
+    buf_win   = (unsigned char *) mem_alloc_4k(memman,160 * 52);
     layer_setbuf(lay_back,buf_back,binfo->scrnx,binfo->scrny,-1);             //设定背景层
     layer_setbuf(lay_mouse,buf_mouse,16,16,99);                                //设定鼠标层（透明色为99）
-    layer_setbuf(lay_win  ,buf_win,160,68,-1);
+    layer_setbuf(lay_win  ,buf_win,160,52,-1);
 
 
     init_screen8(buf_back, binfo->scrnx,binfo->scrny);                         //画一下桌面
-    make_window8(buf_win,160,68,"Window");
-    print_fonts (buf_win,160,24,28,COL8_BLACK,"  Welcome to");
-    print_fonts (buf_win,160,24,44,COL8_BLACK,"    Goo-OS!");
+    make_window8(buf_win,160,52,"COUNTER");
 
     sprintf(s,"| MEMORY:%dMB|FREE:%dKB",memtotal /(1024*1024),mem_total(memman)/1024); //输出内存消息
     print_fonts(buf_back ,binfo->scrnx,100,8,COL8_WHITE,s);
@@ -79,7 +77,14 @@ void bootmain(void) {
 
     layer_refresh(lay_back,0,0,binfo->scrnx,48);
 
+    long count = 0;
     for(;;){
+        count ++ ;
+        sprintf(s,"%010lu",count);
+        boxfill8(buf_win,160,COL8_GREY,40,28,119,43);
+        print_fonts(buf_win,160,40,28,COL8_BLACK,s);
+        layer_refresh(lay_win,40,28,120,44);
+
         kflag = fifo8_status(&keyfifo);
         mflag = fifo8_status(&mousefifo);
         if( kflag || mflag ){                                                //键盘或者鼠标的中断缓存有数据的时候进入
@@ -132,7 +137,7 @@ void bootmain(void) {
             }
         }
         else
-        stihlt();
+        sti();
     }
 }
 

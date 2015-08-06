@@ -33,6 +33,6 @@ void layer_slide(struct LAYER * lay, int vx0, int vy0);
 
 void layer_free(struct LAYER *lay);
 
-void layer_refresh_sub(struct LAYER_CTL *ctl, int vx0, int vy0, int vx1, int vy1);
+void layer_refresh_sub(struct LAYER_CTL *ctl, int vx0, int vy0, int vx1, int vy1, int h0);
 
 #endif

@@ -1,3 +1,5 @@
+#ifndef GRAPH_H_H
+#define GRAPH_H_H
 
 #define COL8_BLACK    0
 #define COL8_RED      1
@@ -25,3 +27,5 @@ void print_fonts(char *vram, int xsize, int x, int y, char c, char *s);
 void init_mouse_cursor(char * mouse, char bc);
 void putblock8_8(char *vram,int vxsize, int pxsize,int pysize,int px0,int py0, char *buf,int bxsize);
 void init_screen8(char * vram, int xsize,int ysize);
+
+#endif

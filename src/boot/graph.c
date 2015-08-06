@@ -1,11 +1,5 @@
-#ifndef GRAPH_H_H
-#define GRAPH_H_H
-#endif
 #include "graph.h"
 
-#ifndef BASIC_H_H
-#define BASIC_H_H
-#endif
 #include "basic.h"
 
 void boxfill8(char *vram, int xsize, unsigned char c, int x0, int y0,int x1, int y1){

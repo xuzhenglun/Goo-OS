@@ -1,6 +1,5 @@
 #ifndef BASIC_H_H
 #define BASIC_H_H
-#endif
 
 #include <sys/types.h>
 
@@ -15,3 +14,5 @@ void int_test(void);
 void stihlt(void);
 int load_cr0(void);
 void store_cr0(int cr0);
+
+#endif

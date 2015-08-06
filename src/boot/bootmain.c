@@ -1,4 +1,4 @@
-#define MEMMAN_ADDR 0x003c0000
+#define MEMMAN_ADDR 0x00280000
 
 #include "bootmain.h"
 #include "graph.h"
@@ -27,7 +27,7 @@ void bootmain(void) {
 
 	unsigned int memtotal;                      //内存初始化
     struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR; //内存管理块的内存位置
-    memtotal = memtest(0x00400000, 0xbfffffff); //总内存大小
+    memtotal = memtest(0x00300000, 0xbfffffff); //总内存大小
     mem_init(memman);							//初始化内存控制块
     mem_free(memman, 0x00300000,memtotal - 0x00300000); //初始化内存页
 
@@ -44,7 +44,7 @@ void bootmain(void) {
 	init_screen8(buf_back, binfo->scrnx,binfo->scrny); 						//画一下桌面
 
     sprintf(s,"| MEMORY:%dMB|FREE:%dKB",memtotal /(1024*1024),mem_total(memman)/1024); //输出内存消息
-    print_fonts(buf_back ,binfo->scrnx,80,8,COL8_WHITE,s);
+    print_fonts(buf_back ,binfo->scrnx,100,8,COL8_WHITE,s);
 
     sprintf(s,"%d * %d ",binfo->scrnx,binfo->scrny);									//输出屏幕分辨率
     print_fonts(buf_back ,binfo->scrnx,8,8,COL8_WHITE,s);

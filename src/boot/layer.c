@@ -114,6 +114,10 @@ void layer_free(struct LAYER *lay){
 void layer_refresh_sub(struct LAYER_CTL *ctl, int vx0, int vy0, int vx1, int vy1){
      struct LAYER *lay;
      unsigned char * buf,c,*vram = ctl->vram;
+	 if (vx0 < 0) vx0 = 0;
+	 if (vy0 < 0) vy0 = 0;
+	 if (vx1 > ctl->xsize) vx1 = ctl->xsize;
+	 if (vy1 > ctl->ysize) vy1 = ctl->ysize;
      for(int h = 0;h <= ctl->top;h++){
          lay = ctl->layers_p[h];
          buf = lay->buf;

@@ -13,7 +13,7 @@ struct LAYER{
 };
 
 struct LAYER_CTL {
-    unsigned char *vram;
+    unsigned char *vram,*map;
     int xsize,ysize,top;
     struct LAYER * layers_p[MAX_LAYERS];
     struct LAYER   layers[MAX_LAYERS];
@@ -33,6 +33,6 @@ void layer_slide(struct LAYER * lay, int vx0, int vy0);
 
 void layer_free(struct LAYER *lay);
 
-void layer_refresh_sub(struct LAYER_CTL *ctl, int vx0, int vy0, int vx1, int vy1, int h0);
+void layer_refresh_sub(struct LAYER_CTL *ctl, int vx0, int vy0, int vx1, int vy1, int h0, int h1);
 
 #endif

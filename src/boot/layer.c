@@ -6,7 +6,7 @@ struct LAYER_CTL * layer_ctl_init(struct MEMMAN *man, unsigned char *vram, int x
     if(ctl == 0){
         return ctl;
     }
-    ctl->map  = (unsigned char *)mem_alloc_4k(man,sizeof(xsize * ysize));
+    ctl->map  = (unsigned char *)mem_alloc_4k(man,xsize*ysize);
     if(ctl->map == 0){
         return ctl;
     }
@@ -97,7 +97,7 @@ void layer_updown(struct LAYER * lay, int height){
 
 void layer_refresh(struct LAYER * lay, int bx0, int by0, int bx1, int by1){
     if( lay->height >= 0 ){
-        layer_refresh_sub(lay->ctl, lay->vx0 + bx0, lay->vy0 + by0, lay->vx0 + bx1, lay->vy0 + by1, lay->height, lay->height);
+        layer_refresh_sub(lay->ctl, lay->vx0 + bx0, lay->vy0 + by0, lay->vx0 + bx1 + 1, lay->vy0 + by1 + 1, lay->height, lay->height);
     }
 }
 

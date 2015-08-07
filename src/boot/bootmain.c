@@ -62,8 +62,8 @@ void bootmain(void) {
     layer_slide(lay_mouse,mx,my);                                            //把鼠标层偏移到中间位置
     layer_slide(lay_win,80,72);
     layer_updown(lay_back,0);                                                //设定背景层为0层
+	layer_updown(lay_win,1);
     layer_updown(lay_mouse,2);                                                //设定鼠标层为1层
-    layer_updown(lay_win,1);
 
     sti();
     io_out8(PIC0_IMR, 0xf9); /* PIC1とキーボードを許可(11111001) */                    //开始接受鼠标和键盘中断

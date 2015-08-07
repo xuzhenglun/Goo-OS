@@ -1,17 +1,9 @@
-#ifndef INT_H_H
-#define INT_H_H
-#endif
-
 #include "int.h"
-
-#ifndef BASIC_H_H
-#define BASIC_H_H
-#endif
-
 #include "basic.h"
 #include "../golibc/stdio.h"
 #include "bootmain.h"
 #include "graph.h"
+#include "timer.h"
 
 void init_pic(void){
     io_out8(PIC0_IMR,  0xff  );
@@ -32,6 +24,12 @@ void init_pic(void){
 }
 
 #define PORT_KEYDAT		0x0060
+
+void int_handler_20(int *esp){
+    extern struct TIMERCTRL timerctrl;
+    io_out8(PIC0_OCW2, 0x60);
+    timerctrl.count++;
+}
 
 void int_handler_21(int *esp){
 	io_out8(PIC0_OCW2,0x61);

@@ -1,6 +1,5 @@
 #ifndef BOOTMAIN_H_H
 #define BOOTMAIN_H_H
-#endif
 
 #include <sys/types.h>
 
@@ -17,3 +16,5 @@ struct BOOTINFO{
     short scrnx,scrny;
     char *vram;
 };
+
+#endif

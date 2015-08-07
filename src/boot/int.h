@@ -1,3 +1,6 @@
+#ifndef INT_H_H
+#define INT_H_H
+
 #define PORT_KEYDAT     0x0060
 
 #define PIC0_ICW1		0x0020
@@ -50,9 +53,13 @@ void enable_mouse(struct MOUSE_DEC *mdec);
 struct FIFO8 keyfifo,mousefifo;
 
 void init_pic(void);
+void int_handler_20(int * esp);
 void int_handler_21(int * esp);
 void int_handler_27(int * esp);
 void int_handler_2c(int * esp);
+void asm_int_handler_20(void);
 void asm_int_handler_21(void);
 void asm_int_handler_27(void);
 void asm_int_handler_2c(void);
+
+#endif

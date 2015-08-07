@@ -8,6 +8,8 @@
 #include "basic.h"
 #include "memory.h"
 #include "layer.h"
+#include "timer.h"
+
 
 void bootmain(void) {
     struct LAYER_CTL * layctl;                     //初始化定义层控制体
@@ -16,6 +18,7 @@ void bootmain(void) {
     init_palette();
     init_gdtidt();
     init_pic();
+    init_pit();
 
     struct BOOTINFO *binfo;                        //从内存中找到在IPL中保存的图形参数
     binfo = (struct BOOTINFO *) 0x0ff0;
@@ -66,7 +69,7 @@ void bootmain(void) {
     layer_updown(lay_mouse,2);                                                //设定鼠标层为1层
 
     sti();
-    io_out8(PIC0_IMR, 0xf9); /* PIC1とキーボードを許可(11111001) */                    //开始接受鼠标和键盘中断
+    io_out8(PIC0_IMR, 0xf8); /* PIC1とキーボードを許可(11111001) */                    //开始接受鼠标和键盘中断
     io_out8(PIC1_IMR, 0xef); /* マウスを許可(11101111) */
 
     int kflag,mflag;                                                                //初始化键盘鼠标中断相关变量
@@ -77,10 +80,9 @@ void bootmain(void) {
 
     layer_refresh(lay_back,0,0,binfo->scrnx,48);
 
-    long count = 0;
+    extern struct TIMERCTRL timerctrl;
     for(;;){
-        count ++ ;
-        sprintf(s,"%010lu",count);
+        sprintf(s,"%010lu",timerctrl.count);
         boxfill8(buf_win,160,COL8_GREY,40,28,119,43);
         print_fonts(buf_win,160,40,28,COL8_BLACK,s);
         layer_refresh(lay_win,40,28,120,44);

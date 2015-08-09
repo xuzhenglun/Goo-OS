@@ -24,9 +24,12 @@ void bootmain(void) {
     binfo = (struct BOOTINFO *) 0x0ff0;
     char s[40];                                    //文字输出缓存，（在栈中）
 
-    char keybuf[32],mousebuf[128];                //鼠标和键盘中断缓存，（在栈中）
+    char keybuf[32],mousebuf[128],timerbuf[8];                //鼠标和键盘中断缓存，（在栈中）
     fifo8_init(&keyfifo,   32,  keybuf  );
     fifo8_init(&mousefifo, 128, mousebuf);
+    fifo8_init(&timerfifo, 8,   timerbuf);
+
+    settimer(1000, &timerfifo, 1);
 
     unsigned int memtotal;                      //内存初始化
     struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR; //内存管理块的内存位置
@@ -72,7 +75,7 @@ void bootmain(void) {
     io_out8(PIC0_IMR, 0xf8); /* PIC1とキーボードを許可(11111001) */                    //开始接受鼠标和键盘中断
     io_out8(PIC1_IMR, 0xef); /* マウスを許可(11101111) */
 
-    int kflag,mflag;                                                                //初始化键盘鼠标中断相关变量
+    int kflag,mflag,tflag;                                                                //初始化键盘鼠标中断相关变量
     unsigned char mouse_dbuff[3];
     struct MOUSE_DEC mdec;
     init_keyboard();
@@ -89,7 +92,8 @@ void bootmain(void) {
 
         kflag = fifo8_status(&keyfifo);
         mflag = fifo8_status(&mousefifo);
-        if( kflag || mflag ){                                                //键盘或者鼠标的中断缓存有数据的时候进入
+        tflag = fifo8_status(&timerfifo);
+        if( kflag || mflag || tflag){                                                //键盘或者鼠标的中断缓存有数据的时候进入
             cli();                                                             //屏蔽中断
             if(kflag)                                                           //键盘部分
             {
@@ -136,6 +140,12 @@ void bootmain(void) {
                     layer_refresh(lay_back,32,55,32+79,70);
                     layer_slide(lay_mouse,mx,my);                          //偏移鼠标层以移动光标
                 }
+            }
+            if(tflag){
+                 unsigned char i = fifo8_get(&timerfifo);
+                 sti();
+                 print_fonts(buf_back, binfo->scrnx, 170, 40, COL8_BLACK, "10[sec]");
+                 layer_refresh(lay_back, 170, 40, 170 + 56 , 40 + 16);
             }
         }
         else

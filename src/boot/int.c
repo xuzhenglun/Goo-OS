@@ -29,6 +29,12 @@ void int_handler_20(int *esp){
     extern struct TIMERCTRL timerctrl;
     io_out8(PIC0_OCW2, 0x60);
     timerctrl.count++;
+    if(timerctrl.timeout > 0){
+        timerctrl.timeout--;
+        if(timerctrl.timeout  == 0){
+            fifo8_put(timerctrl.fifo, timerctrl.data);
+        }
+    }
 }
 
 void int_handler_21(int *esp){

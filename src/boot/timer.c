@@ -9,3 +9,13 @@ void  init_pit(void){
     io_out8(PIT_CNT0,0x2e);
     timerctrl.count = 0;
 }
+
+void settimer(unsigned int timeout, struct FIFO* fifo,unsigned char data){
+	int eflags;
+	eflags = io_load_eflags();
+	cli();
+	timerctrl.timeout = timeout;
+	timerctrl.fifo    = fifo;
+	timerctrl.data    = data;
+	io_store_eflags(eflags);
+}

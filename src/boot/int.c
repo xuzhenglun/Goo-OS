@@ -29,10 +29,13 @@ void int_handler_20(int *esp){
     extern struct TIMERCTRL timerctrl;
     io_out8(PIC0_OCW2, 0x60);
     timerctrl.count++;
-    if(timerctrl.timeout > 0){
-        timerctrl.timeout--;
-        if(timerctrl.timeout  == 0){
-            fifo8_put(timerctrl.fifo, timerctrl.data);
+    for(int i = 0; i < MAX_TIMER; i++){
+        if(timerctrl.timer[i].flags == TIMER_FLAGS_USING){
+            timerctrl.timer[i].timeout--;
+            if(timerctrl.timer[i].timeout  == 0){
+                timerctrl.timer[i].flags = TIMER_FLAGS_ALLOC;
+                fifo8_put(timerctrl.timer[i].fifo, timerctrl.timer[i].data);
+            }
         }
     }
 }

@@ -33,8 +33,6 @@ struct MOUSE_DEC{
     int x,y,btn;
 };
 
-extern struct TIMERCTRL timerctrl;
-
 int  mouse_decode(struct MOUSE_DEC *mdec,unsigned char dat);
 void wait_KBC_sendready(void);
 void init_keyboard(void);

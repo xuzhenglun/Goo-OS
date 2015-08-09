@@ -4,7 +4,7 @@
 struct FIFO8{
     unsigned char *buf;
     int head,tail,size,flags;
-}keyfifo,mousefifo,timerfifo;
+}keyfifo,mousefifo;
 
 void fifo8_init(struct FIFO8 *fifo, int size, unsigned char *buf);
 int  fifo8_put (struct FIFO8 *fifo, unsigned char data);

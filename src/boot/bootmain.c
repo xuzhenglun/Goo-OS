@@ -24,12 +24,24 @@ void bootmain(void) {
     binfo = (struct BOOTINFO *) 0x0ff0;
     char s[40];                                    //文字输出缓存，（在栈中）
 
-    char keybuf[32],mousebuf[128],timerbuf[8];                //鼠标和键盘中断缓存，（在栈中）
+    char keybuf[32],mousebuf[128],timerbuf[8],timerbuf2[8],timerbuf3[8];                //鼠标和键盘中断缓存，（在栈中）
+    struct FIFO8 timerfifo,timerfifo2,timerfifo3;
+    struct TIMER *timer,*timer2,*timer3;
     fifo8_init(&keyfifo,   32,  keybuf  );
     fifo8_init(&mousefifo, 128, mousebuf);
-    fifo8_init(&timerfifo, 8,   timerbuf);
 
-    settimer(1000, &timerfifo, 1);
+    fifo8_init(&timerfifo, 8, timerbuf);
+    timer = timer_alloc();
+    timer_init(timer, &timerfifo, 1);
+    timer_settime(timer, 1000);
+    fifo8_init(&timerfifo2, 8, timerbuf2);
+    timer2 = timer_alloc();
+    timer_init(timer2, &timerfifo2, 1);
+    timer_settime(timer2, 300);
+    fifo8_init(&timerfifo3, 8, timerbuf3);
+    timer3 = timer_alloc();
+    timer_init(timer3, &timerfifo3, 1);
+    timer_settime(timer3, 50);
 
     unsigned int memtotal;                      //内存初始化
     struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR; //内存管理块的内存位置
@@ -75,7 +87,7 @@ void bootmain(void) {
     io_out8(PIC0_IMR, 0xf8); /* PIC1とキーボードを許可(11111001) */                    //开始接受鼠标和键盘中断
     io_out8(PIC1_IMR, 0xef); /* マウスを許可(11101111) */
 
-    int kflag,mflag,tflag;                                                                //初始化键盘鼠标中断相关变量
+    int kflag,mflag,tflag,tflag2,tflag3;                                                                //初始化键盘鼠标中断相关变量
     unsigned char mouse_dbuff[3];
     struct MOUSE_DEC mdec;
     init_keyboard();
@@ -93,7 +105,9 @@ void bootmain(void) {
         kflag = fifo8_status(&keyfifo);
         mflag = fifo8_status(&mousefifo);
         tflag = fifo8_status(&timerfifo);
-        if( kflag || mflag || tflag){                                                //键盘或者鼠标的中断缓存有数据的时候进入
+		tflag2 = fifo8_status(&timerfifo2);
+		tflag3 = fifo8_status(&timerfifo3);
+        if( kflag || mflag || tflag || tflag2 || tflag3){                                                //键盘或者鼠标的中断缓存有数据的时候进入
             cli();                                                             //屏蔽中断
             if(kflag)                                                           //键盘部分
             {
@@ -144,12 +158,32 @@ void bootmain(void) {
             if(tflag){
                  unsigned char i = fifo8_get(&timerfifo);
                  sti();
-                 print_fonts(buf_back, binfo->scrnx, 170, 40, COL8_BLACK, "10[sec]");
+                 print_fonts(buf_back, binfo->scrnx, 170, 40-16, COL8_BLACK, "10[sec]");
+                 layer_refresh(lay_back, 170, 40-16, 170 + 56 , 40 + 16-16);
+            }
+            if(tflag2){
+                 unsigned char i = fifo8_get(&timerfifo2);
+                 sti();
+                 print_fonts(buf_back, binfo->scrnx, 170, 40, COL8_BLACK, "3[sec]");
                  layer_refresh(lay_back, 170, 40, 170 + 56 , 40 + 16);
             }
+            if(tflag3){
+                 unsigned char i = fifo8_get(&timerfifo3);
+                 sti();
+				if (i != 0) {
+					timer_init(timer3, &timerfifo3, 0);
+					boxfill8(buf_back, binfo->scrnx, COL8_BLACK, 170, 40+16, 177, 40+16+14);
+				} else {
+					timer_init(timer3, &timerfifo3, 1);
+					boxfill8(buf_back, binfo->scrnx, COL8_LD_BLUE, 170, 40+16, 177, 40+16+14);
+				}
+				timer_settime(timer3, 50);
+				layer_refresh(lay_back, 170, 40+16, 177, 40+16+14);
+            }
+			
         }
         else
-        sti();
+        stihlt();
     }
 }
 

@@ -185,3 +185,13 @@ void make_window8(char * buf, int xsize,int ysize,char *title){
 	}
 	return;
 }
+
+void print_refreshable_font(struct LAYER *lay,int x,int y, int color, int background, char * s){
+    int len = 0;
+    for(char * l = s; *l != '\0'; l++ ){
+        len++;
+    }
+    boxfill8(lay->buf, lay->bxsize, background, x, y, x + len * 8,y + 16);
+    print_fonts(lay->buf,lay->bxsize,x,y,color,s);
+    layer_refresh(lay,x,y,x + len * 8, y + 16);
+}

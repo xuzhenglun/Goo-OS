@@ -18,6 +18,7 @@
 #define COL8_LD_BLUE  14
 #define COL8_D_GREY   15
 
+#include "layer.h"
 
 void init_palette(void);
 void set_palette(int start,int end,unsigned char *rbg);
@@ -28,5 +29,6 @@ void init_mouse_cursor(char * mouse, char bc);
 void putblock8_8(char *vram,int vxsize, int pxsize,int pysize,int px0,int py0, char *buf,int bxsize);
 void init_screen8(char * vram, int xsize,int ysize);
 void make_window8(char * vram, int xsize,int ysize,char *title);
+void print_refreshable_font(struct LAYER *lay,int x,int y, int color, int background, char * s);
 
 #endif

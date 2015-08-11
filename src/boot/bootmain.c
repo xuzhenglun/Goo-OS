@@ -98,9 +98,7 @@ void bootmain(void) {
     extern struct TIMERCTRL timerctrl;
     for(;;){
         sprintf(s,"%010lu",timerctrl.count);
-        boxfill8(buf_win,160,COL8_GREY,40,28,119,43);
-        print_fonts(buf_win,160,40,28,COL8_BLACK,s);
-        layer_refresh(lay_win,40,28,120,44);
+        print_refreshable_font(lay_win,40,28,COL8_BLACK,COL8_GREY,s);
 
         unsigned long overflow = -0x100;
         if(timerctrl.count >= overflow){
@@ -120,9 +118,7 @@ void bootmain(void) {
               sti();
               char s[4];
               sprintf(s ,"%02X", i );
-              boxfill8(buf_back, binfo->scrnx, COL8_BLACK, 0, 25, 15, 40);
-              print_fonts(buf_back, binfo->scrnx, 0, 25, COL8_WHITE, s );
-              layer_refresh(lay_back,0,25,15,40);
+              print_refreshable_font(lay_back,0,25,COL8_WHITE,COL8_LD_BLUE,s);
              }
             cli();
             if(mflag)                                                            //鼠标部分
@@ -132,9 +128,7 @@ void bootmain(void) {
                 if(mouse_decode(&mdec, i) != 0){                                //解码鼠标中断带来的数据
                     char s[30];
                     sprintf(s ,"%02X %02X %02X", mdec.buf[0],mdec.buf[1],mdec.buf[2]);
-                    boxfill8(buf_back, binfo->scrnx, COL8_BLACK, 32, 25, 32+8*8-1, 40);
-                    print_fonts(buf_back, binfo->scrnx, 32, 25, COL8_WHITE, s );  //先输出RAW数据压压惊
-                    layer_refresh(lay_back,32,25,32+8*8,41);  //鼠标三个按键的解码
+                    print_refreshable_font(lay_back,32,24,COL8_WHITE,COL8_LD_BLUE,s);
 
                     sprintf(s, "[lcr,%4d,%4d]",mdec.x,mdec.y);
                     if((mdec.btn & 0x01) != 0)
@@ -143,9 +137,7 @@ void bootmain(void) {
                         s[3] = 'R';
                     if((mdec.btn & 0x04) != 0)
                         s[2] = 'C';
-                    boxfill8(buf_back, binfo->scrnx, COL8_BLACK, 32, 40, 32+15*8-1, 55);
-                    print_fonts(buf_back, binfo->scrnx, 32, 40, COL8_WHITE, s );
-                    layer_refresh(lay_back,32,40,32+15*8-1,55);  //鼠标三个按键的解码
+                    print_refreshable_font(lay_back,32,40,COL8_WHITE,COL8_LD_BLUE,s);
 
                     mx += mdec.x;
                     my += mdec.y;
@@ -154,9 +146,7 @@ void bootmain(void) {
                     if(my < 0) my = 0;
                     if(my > binfo->scrny - 1) my = binfo->scrny - 1;              //鼠标（X,Y）解码
                     sprintf(s,"(%3d,%3d)",mx,my);
-                    boxfill8(buf_back, binfo->scrnx, COL8_BLACK, 32, 55, 32+79, 70);
-                    print_fonts(buf_back, binfo->scrnx, 32, 55, COL8_WHITE, s );  //输出（X,Y）偏移
-                    layer_refresh(lay_back,32,55,32+79,70);
+                    print_refreshable_font(lay_back,32,55,COL8_WHITE,COL8_LD_BLUE,s);
                     layer_slide(lay_mouse,mx,my);                          //偏移鼠标层以移动光标
                 }
             }

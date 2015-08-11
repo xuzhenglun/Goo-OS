@@ -102,6 +102,11 @@ void bootmain(void) {
         print_fonts(buf_win,160,40,28,COL8_BLACK,s);
         layer_refresh(lay_win,40,28,120,44);
 
+        unsigned long overflow = -0x100;
+        if(timerctrl.count >= overflow){
+            timer_refresh();
+            }//时间计数溢出，重新刷新时间。32位long为4字节，大约一年溢出。若编译器将其处理成8字节，我觉得没必要刷新了。
+
         kflag = fifo8_status(&keyfifo);
         mflag = fifo8_status(&mousefifo);
         tflag = fifo8_status(&timerfifo);
@@ -180,7 +185,7 @@ void bootmain(void) {
 				timer_settime(timer3, 50);
 				layer_refresh(lay_back, 170, 40+16, 177, 40+16+14);
             }
-			
+
         }
         else
         stihlt();

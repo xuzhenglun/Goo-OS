@@ -191,7 +191,7 @@ void print_refreshable_font(struct LAYER *lay,int x,int y, int color, int backgr
     for(char * l = s; *l != '\0'; l++ ){
         len++;
     }
-    boxfill8(lay->buf, lay->bxsize, background, x, y, x + len * 8,y + 16);
-    print_fonts(lay->buf,lay->bxsize,x,y,color,s);
+    boxfill8((char *)lay->buf, lay->bxsize, background, x, y, x + len * 8,y + 16);
+    print_fonts((char *)lay->buf,lay->bxsize,x,y,color,s);
     layer_refresh(lay,x,y,x + len * 8, y + 16);
 }

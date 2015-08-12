@@ -32,23 +32,14 @@ void int_handler_20(int *esp){
     if(timerctrl.next > timerctrl.count){
         return;
     }
-    int i;
-    for(i = 0; i < timerctrl.using; i++){
-        if(timerctrl.timer_p[i]->timeout > timerctrl.count){
-            break;
-        }
-        timerctrl.timer_p[i]->flags = TIMER_FLAGS_ALLOC;
-        fifo8_put(timerctrl.timer_p[i]->fifo, timerctrl.timer_p[i]->data);
+    else{
+         while(timerctrl.head->timeout <= timerctrl.count){
+            timerctrl.head->flags = TIMER_FLAGS_ALLOC;
+            fifo8_put(timerctrl.head->fifo, timerctrl.head->data);
+            timerctrl.head = timerctrl.head->next;
+         }
     }
-    timerctrl.using -= i;
-    for(int j = 0; j < timerctrl.using; j++){
-        timerctrl.timer_p[j] = timerctrl.timer_p[ i + j ];
-    }
-    if(timerctrl.using > 0){
-        timerctrl.next = timerctrl.timer_p[0]->timeout;
-    }else{
-         timerctrl.next = -1;
-    }
+    timerctrl.next = timerctrl.head->timeout;
 }
 
 void int_handler_21(int *esp){

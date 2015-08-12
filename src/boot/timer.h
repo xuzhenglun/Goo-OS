@@ -11,12 +11,12 @@ struct TIMER{
     unsigned int  timeout,flags;
     struct FIFO8 *fifo;
     unsigned char data;
+    struct TIMER *next;
 };
 
 struct TIMERCTRL{
     unsigned long count,next;
-    int using;
-    struct TIMER *timer_p[MAX_TIMER];
+    struct TIMER *head,*timer_p[MAX_TIMER];
     struct TIMER timer[MAX_TIMER];
 }timerctrl;
 

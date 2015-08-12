@@ -61,7 +61,8 @@ void bootmain(void) {
 
 
     init_screen8(buf_back, binfo->scrnx,binfo->scrny);                         //画一下桌面
-    make_window8(buf_win,160,52,"COUNTER");
+    make_window8(buf_win,160,52,"TYPING");
+    make_textbox(lay_win,8,28,144,16,COL8_WHITE);
 
     sprintf(s,"| MEMORY:%dMB|FREE:%dKB",memtotal /(1024*1024),mem_total(memman)/1024); //输出内存消息
     print_fonts(buf_back ,binfo->scrnx,100,8,COL8_WHITE,s);
@@ -94,10 +95,8 @@ void bootmain(void) {
     layer_refresh(lay_back,0,0,binfo->scrnx,48);
 
     extern struct TIMERCTRL timerctrl;
+    int x = 8;
     for(;;){
-        sprintf(s,"%010lu",timerctrl.count);
-        print_refreshable_font(lay_win,40,28,COL8_BLACK,COL8_GREY,s);
-
         unsigned long overflow = -0x100;
         if(timerctrl.count >= overflow){
             timer_refresh();
@@ -110,11 +109,31 @@ void bootmain(void) {
             cli();                                                             //屏蔽中断
             if(kflag)                                                           //键盘部分
             {
-              unsigned char i = fifo8_get(&keyfifo);
-              sti();
-              char s[4];
-              sprintf(s ,"%02X", i );
-              print_refreshable_font(lay_back,0,25,COL8_WHITE,COL8_LD_BLUE,s);
+                unsigned char i = fifo8_get(&keyfifo);
+                sti();
+                static char keytable[0x54] = {
+                    0,   0,   '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 0,   0,
+                    'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '[', ']', 0,   0,   'A', 'S',
+                    'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', '\'', 0,   0,   '\\', 'Z', 'X', 'C', 'V',
+                    'B', 'N', 'M', ',', '.', '/', 0,   '*', 0,   ' ', 0,   0,   0,   0,   0,   0,
+                    0,   0,   0,   0,   0,   0,   0,   '7', '8', '9', '-', '4', '5', '6', '+', '1',
+                    '2', '3', '0', '.'
+                };
+                char s[4];
+                sprintf(s ,"%02X", i );
+                print_refreshable_font(lay_back,0,25,COL8_WHITE,COL8_LD_BLUE,s);
+                if(0 <= i && i <= 511-256 && i < 0x54){
+                    if(keytable[i] != 0 && x < 144){
+                        s[0] = keytable[i];
+                        s[1] = '\0';
+                        print_refreshable_font(lay_win, x, 28, COL8_BLACK, COL8_WHITE, s);
+                        x += 8;
+                    }
+                    if( i == 0x0e && x > 8 ){
+                        print_refreshable_font(lay_win, x, 28, COL8_BLACK, COL8_WHITE, " ");
+                        x -= 8;
+                    }
+                }
              }
             cli();
             if(mflag)                                                            //鼠标部分
@@ -158,13 +177,13 @@ void bootmain(void) {
                 if(i == 0 || i == 1){
                     if (i != 0) {
                         timer_init(timer3, &timerfifo, 0);
-                        boxfill8(buf_back, binfo->scrnx, COL8_BLACK, 170, 40+16, 177, 40+16+14);
+                        boxfill8(buf_win, lay_win->bxsize, COL8_BLACK, x, 28, x+6, 28+14);
                     }else {
                         timer_init(timer3, &timerfifo, 1);
-                        boxfill8(buf_back, binfo->scrnx, COL8_LD_BLUE, 170, 40+16, 177, 40+16+14);
+                        boxfill8(buf_win, lay_win->bxsize, COL8_WHITE, x, 28, x+6, 28+14);
                     }
                     timer_settime(timer3, 50);
-                    layer_refresh(lay_back, 170, 40+16, 177, 40+16+14);
+                    layer_refresh(lay_win, x, 28, x+6, 28+14);
                 }
             }
         else

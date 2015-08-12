@@ -30,5 +30,6 @@ void putblock8_8(char *vram,int vxsize, int pxsize,int pysize,int px0,int py0, c
 void init_screen8(char * vram, int xsize,int ysize);
 void make_window8(char * vram, int xsize,int ysize,char *title);
 void print_refreshable_font(struct LAYER *lay,int x,int y, int color, int background, char * s);
+void make_textbox(struct LAYER *lay, int x0, int y0, int sx, int sy, int c);
 
 #endif

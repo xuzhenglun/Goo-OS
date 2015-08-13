@@ -69,3 +69,17 @@ void store_cr0(int cr0){
         :"r"(cr0)
         );
 }
+
+void load_tr(int16_t tr){
+    __asm__ __volatile__(
+        "LTR %0"
+        :
+        :"r"(tr)
+        );
+}
+
+void taskswitch_4(void){
+    __asm__ __volatile__(
+        "JMP 32:0"
+        );
+}

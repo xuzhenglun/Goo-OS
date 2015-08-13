@@ -9,6 +9,7 @@
 #include "memory.h"
 #include "layer.h"
 #include "timer.h"
+#include "mtask.h"
 
 
 void bootmain(void) {
@@ -95,6 +96,34 @@ void bootmain(void) {
     layer_refresh(lay_back,0,0,binfo->scrnx,48);
 
     extern struct TIMERCTRL timerctrl;
+
+    struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *)ADR_GDT;
+    struct TSS32 tss_a,tss_b;
+    tss_a.ldtr = 0;
+    tss_a.iomap = 0x40000000;
+    tss_b.ldtr = 0;
+    tss_b.iomap = 0x40000000;
+    set_segmdesc(gdt + 3, 104, (int) &tss_a, AR_TSS32);
+    set_segmdesc(gdt + 4, 104, (int) &tss_b, AR_TSS32);
+    load_tr(3 * 8);
+    int task_b_esp = mem_alloc_4k(memman, 64 * 1024) + 64 * 1024;
+	tss_b.eip = (int) &task_b_main;
+	tss_b.eflags = 0x00000202; /* IF = 1; */
+	tss_b.eax = 0;
+	tss_b.ecx = 0;
+	tss_b.edx = 0;
+	tss_b.ebx = 0;
+	tss_b.esp = task_b_esp;
+	tss_b.ebp = 0;
+	tss_b.esi = 0;
+	tss_b.edi = 0;
+	tss_b.es = 1 * 8;
+	tss_b.cs = 2 * 8;
+	tss_b.ss = 1 * 8;
+	tss_b.ds = 1 * 8;
+	tss_b.fs = 1 * 8;
+	tss_b.gs = 1 * 8;
+
     int x = 8;
     for(;;){
         unsigned long overflow = -0x100;
@@ -170,6 +199,7 @@ void bootmain(void) {
                     sti();
                 if(i == 10){
                     print_refreshable_font(lay_back,170,24,COL8_WHITE,COL8_LD_BLUE,"10[sec]");
+                    taskswitch_4();
                 }
                 if(i == 3){
                     print_refreshable_font(lay_back,170,40,COL8_WHITE,COL8_LD_BLUE,"3[sec]");
@@ -192,7 +222,11 @@ void bootmain(void) {
     }
 }
 
-
+void task_b_main(void){
+    while(1){
+        hlt();
+    }
+}
 
 
 

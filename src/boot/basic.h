@@ -15,6 +15,6 @@ void stihlt(void);
 int load_cr0(void);
 void store_cr0(int cr0);
 void load_tr(int16_t tr);
-void taskswitch_4();
+void farjump(int eip,int cs);
 
 #endif

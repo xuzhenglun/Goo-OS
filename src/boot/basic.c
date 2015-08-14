@@ -78,8 +78,8 @@ void load_tr(int16_t tr){
         );
 }
 
-void taskswitch_4(void){
+void farjump(int eip,int cs){
     __asm__ __volatile__(
-        "JMP 32:0"
+            "JMP FAR PTR [esp+8]"
         );
 }

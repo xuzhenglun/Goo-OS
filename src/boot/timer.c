@@ -49,7 +49,7 @@ void timer_settime(struct TIMER *timer,unsigned int timeout){
          return;
      }
      struct TIMER * tmp = head;
-     while(timeout > tmp->next->timeout){
+     while(timer->timeout > tmp->next->timeout){
          tmp = tmp->next;
      }
      timer->next = tmp->next;

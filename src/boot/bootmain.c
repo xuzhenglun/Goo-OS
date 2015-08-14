@@ -12,9 +12,10 @@
 #include "mtask.h"
 
 
+struct LAYER *lay_back,*lay_mouse,*lay_win;        //定义鼠标层和背景层
+
 void bootmain(void) {
     struct LAYER_CTL * layctl;                     //初始化定义层控制体
-    struct LAYER    *lay_back,*lay_mouse,*lay_win;        //定义鼠标层和背景层
     char *buf_back,*buf_mouse,*buf_win;
     init_palette();
     init_gdtidt();
@@ -27,11 +28,11 @@ void bootmain(void) {
 
     char keybuf[32],mousebuf[128],timerbuf[32];                //鼠标和键盘中断缓存，（在栈中）
     struct FIFO8 timerfifo;
-    struct TIMER *timer,*timer2,*timer3;
+    struct TIMER *timer,*timer2,*timer3,*timer_ts;
     fifo8_init(&keyfifo,   32,  keybuf  );
     fifo8_init(&mousefifo, 128, mousebuf);
-
     fifo8_init(&timerfifo, 32, timerbuf);
+
     timer = timer_alloc();
     timer_init(timer, &timerfifo, 10);
     timer_settime(timer, 1000);
@@ -41,6 +42,9 @@ void bootmain(void) {
     timer3 = timer_alloc();
     timer_init(timer3, &timerfifo, 1);
     timer_settime(timer3, 50);
+    timer_ts = timer_alloc();
+    timer_init(timer_ts, &timerfifo, 2);
+    timer_settime(timer_ts, 2);
 
     unsigned int memtotal;                      //内存初始化
     struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR; //内存管理块的内存位置
@@ -130,14 +134,15 @@ void bootmain(void) {
         if(timerctrl.count >= overflow){
             timer_refresh();
             }//时间计数溢出，重新刷新时间。32位long为4字节，大约一年溢出。若编译器将其处理成8字节，我觉得没必要刷新了。
-
+        cli();
         kflag = fifo8_status(&keyfifo);
         mflag = fifo8_status(&mousefifo);
         tflag = fifo8_status(&timerfifo);
+        sti();
         if( kflag || mflag || tflag){                                                //键盘或者鼠标的中断缓存有数据的时候进入
-            cli();                                                             //屏蔽中断
             if(kflag)                                                           //键盘部分
             {
+                cli();
                 unsigned char i = fifo8_get(&keyfifo);
                 sti();
                 static char keytable[0x54] = {
@@ -164,9 +169,9 @@ void bootmain(void) {
                     }
                 }
              }
-            cli();
             if(mflag)                                                            //鼠标部分
             {
+                cli();
                 unsigned char i = fifo8_get(&mousefifo);
                 sti();
                 if(mouse_decode(&mdec, i) != 0){                                //解码鼠标中断带来的数据
@@ -195,25 +200,29 @@ void bootmain(void) {
                 }
             }
             if(tflag){
-                    unsigned char i = fifo8_get(&timerfifo);
-                    sti();
+                cli();
+                unsigned char i = fifo8_get(&timerfifo);
+                sti();
                 if(i == 10){
                     print_refreshable_font(lay_back,170,24,COL8_WHITE,COL8_LD_BLUE,"10[sec]");
-                    taskswitch_4();
                 }
                 if(i == 3){
                     print_refreshable_font(lay_back,170,40,COL8_WHITE,COL8_LD_BLUE,"3[sec]");
                 }
-                if(i == 0 || i == 1){
-                    if (i != 0) {
+                if( i <= 1){
+                    if (i == 1) {
                         timer_init(timer3, &timerfifo, 0);
                         boxfill8(buf_win, lay_win->bxsize, COL8_BLACK, x, 28, x+6, 28+14);
                     }else {
                         timer_init(timer3, &timerfifo, 1);
                         boxfill8(buf_win, lay_win->bxsize, COL8_WHITE, x, 28, x+6, 28+14);
                     }
-                    timer_settime(timer3, 50);
                     layer_refresh(lay_win, x, 28, x+6, 28+14);
+                    timer_settime(timer3, 50);
+                }
+                if( i == 2 ){
+                    farjump(0,4*8);
+                    timer_settime(timer_ts, 2);
                 }
             }
         else
@@ -223,8 +232,40 @@ void bootmain(void) {
 }
 
 void task_b_main(void){
+    struct FIFO8 fifo;
+    struct TIMER *timer_ts,*timer_put;
+    int i,fifobuf[128];
+    char s[12];
+    long count = 0;
+
+    fifo8_init(&fifo, 128, fifobuf);
+    timer_ts = timer_alloc();
+    timer_init(timer_ts, &fifo, 2);
+    timer_settime(timer_ts, 2);
+    timer_put = timer_alloc();
+    timer_init(timer_put, &fifo, 1);
+    timer_settime(timer_put, 1);
+
     while(1){
-        hlt();
+        count++;
+        cli();
+        if(fifo8_status(&fifo) == 0){
+            stihlt();
+        }else
+        {
+            i = fifo8_get(&fifo);
+            sti();
+            if(i == 1){
+                sprintf(s, "%u", count);
+                print_refreshable_font(lay_back, 270, 24, COL8_WHITE, COL8_LD_BLUE,s);
+                timer_settime(timer_put,1);
+            }
+            else if(i == 2){
+                farjump(0, 3*8);
+                timer_settime(timer_ts,2);
+            }
+
+        }
     }
 }
 

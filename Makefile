@@ -1,4 +1,4 @@
-OBJS_BOOTPACK = bootasm.o bootmain.o basic.o font.o sprintf.o vsprintf.o strtoul0.o strlen.o dsctbl.o graph.o int.o int_asm.o fifo.o memory.o layer.o timer.o
+OBJS_BOOTPACK = bootasm.o bootmain.o basic.o font.o sprintf.o vsprintf.o strtoul0.o strlen.o dsctbl.o graph.o int.o int_asm.o fifo.o memory.o layer.o timer.o mtask.o
 
 INCPATH  = ./../
 

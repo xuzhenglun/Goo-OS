@@ -28,7 +28,7 @@ void bootmain(void) {
 
     char keybuf[32],mousebuf[128],timerbuf[32];                //鼠标和键盘中断缓存，（在栈中）
     struct FIFO8 timerfifo;
-    struct TIMER *timer,*timer2,*timer3,*timer_ts;
+    struct TIMER *timer,*timer2,*timer3;
     fifo8_init(&keyfifo,   32,  keybuf  );
     fifo8_init(&mousefifo, 128, mousebuf);
     fifo8_init(&timerfifo, 32, timerbuf);
@@ -42,9 +42,6 @@ void bootmain(void) {
     timer3 = timer_alloc();
     timer_init(timer3, &timerfifo, 1);
     timer_settime(timer3, 50);
-    timer_ts = timer_alloc();
-    timer_init(timer_ts, &timerfifo, 2);
-    timer_settime(timer_ts, 2);
 
     unsigned int memtotal;                      //内存初始化
     struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR; //内存管理块的内存位置
@@ -127,6 +124,7 @@ void bootmain(void) {
 	tss_b.ds = 1 * 8;
 	tss_b.fs = 1 * 8;
 	tss_b.gs = 1 * 8;
+    mt_init();
 
     int x = 8;
     for(;;){
@@ -220,10 +218,6 @@ void bootmain(void) {
                     layer_refresh(lay_win, x, 28, x+6, 28+14);
                     timer_settime(timer3, 50);
                 }
-                if( i == 2 ){
-                    farjump(0,4*8);
-                    timer_settime(timer_ts, 2);
-                }
             }
         else
         sti();
@@ -233,15 +227,12 @@ void bootmain(void) {
 
 void task_b_main(void){
     struct FIFO8 fifo;
-    struct TIMER *timer_ts,*timer_put;
+    struct TIMER *timer_put;
     int i,fifobuf[128];
     char s[12];
     long count = 0;
 
     fifo8_init(&fifo, 128, fifobuf);
-    timer_ts = timer_alloc();
-    timer_init(timer_ts, &fifo, 2);
-    timer_settime(timer_ts, 2);
     timer_put = timer_alloc();
     timer_init(timer_put, &fifo, 1);
     timer_settime(timer_put, 1);
@@ -260,11 +251,6 @@ void task_b_main(void){
                 print_refreshable_font(lay_back, 270, 24, COL8_WHITE, COL8_LD_BLUE,s);
                 timer_settime(timer_put,1);
             }
-            else if(i == 2){
-                farjump(0, 3*8);
-                timer_settime(timer_ts,2);
-            }
-
         }
     }
 }

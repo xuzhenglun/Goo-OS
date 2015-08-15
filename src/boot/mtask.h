@@ -10,5 +10,7 @@ struct TSS32{
     int ldtr,iomap;
 };
 
+void mt_init(void);
+void mt_taskswitch();
 
 #endif

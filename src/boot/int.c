@@ -28,7 +28,7 @@ void init_pic(void){
 
 void int_handler_20(int *esp){
     extern struct TIMERCTRL timerctrl;
-    extern struct TIMER *mt_timer;
+    extern struct TIMER *task_timer;
     char ts_flag = 0;
     io_out8(PIC0_OCW2, 0x60);
     timerctrl.count++;
@@ -38,7 +38,7 @@ void int_handler_20(int *esp){
     else{
          while(timerctrl.head->timeout <= timerctrl.count){
             timerctrl.head->flags = TIMER_FLAGS_ALLOC;
-            if(timerctrl.head != mt_timer)
+            if(timerctrl.head != task_timer)
                 fifo8_put(timerctrl.head->fifo, timerctrl.head->data);
             else{
                 ts_flag = 1;
@@ -49,7 +49,7 @@ void int_handler_20(int *esp){
     timerctrl.next = timerctrl.head->timeout;
 
     if(ts_flag != 0){
-         mt_taskswitch();
+        task_switch();
     }
 }
 

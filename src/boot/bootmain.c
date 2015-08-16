@@ -96,35 +96,19 @@ void bootmain(void) {
 
     layer_refresh(lay_back,0,0,binfo->scrnx,48);
 
-    extern struct TIMERCTRL timerctrl;
-
-    struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *)ADR_GDT;
-    struct TSS32 tss_a,tss_b;
-    tss_a.ldtr = 0;
-    tss_a.iomap = 0x40000000;
-    tss_b.ldtr = 0;
-    tss_b.iomap = 0x40000000;
-    set_segmdesc(gdt + 3, 104, (int) &tss_a, AR_TSS32);
-    set_segmdesc(gdt + 4, 104, (int) &tss_b, AR_TSS32);
-    load_tr(3 * 8);
-    int task_b_esp = mem_alloc_4k(memman, 64 * 1024) + 64 * 1024;
-	tss_b.eip = (int) &task_b_main;
-	tss_b.eflags = 0x00000202; /* IF = 1; */
-	tss_b.eax = 0;
-	tss_b.ecx = 0;
-	tss_b.edx = 0;
-	tss_b.ebx = 0;
-	tss_b.esp = task_b_esp;
-	tss_b.ebp = 0;
-	tss_b.esi = 0;
-	tss_b.edi = 0;
-	tss_b.es = 1 * 8;
-	tss_b.cs = 2 * 8;
-	tss_b.ss = 1 * 8;
-	tss_b.ds = 1 * 8;
-	tss_b.fs = 1 * 8;
-	tss_b.gs = 1 * 8;
-    mt_init();
+    struct TASK *task_b;
+    task_init(memman);
+    task_b = task_alloc();
+    task_b->tss.esp = mem_alloc_4k(memman, 64*1024) + 64 * 1024 - 8;
+    task_b->tss.eip = (int)&task_b_main;
+    task_b->tss.es  = 1 << 3;
+    task_b->tss.cs  = 2 << 3;
+    task_b->tss.ss  = 1 << 3;
+    task_b->tss.ds  = 1 << 3;
+    task_b->tss.fs  = 1 << 3;
+    task_b->tss.gs  = 1 << 3;
+    *((int *) (task_b->tss.esp + 4)) = (int) lay_back;
+    task_run(task_b);
 
     int x = 8;
     for(;;){

@@ -171,6 +171,10 @@ void bootmain(void) {
                     sprintf(s,"(%3d,%3d)",mx,my);
                     print_refreshable_font(lay_back,32,55,COL8_WHITE,COL8_LD_BLUE,s);
                     layer_slide(lay_mouse,mx,my);                          //偏移鼠标层以移动光标
+
+                    if((mdec.btn & 0x01) != 0){
+                        layer_slide(lay_win,mx - 80,my - 8);
+                    }
                 }
             }
             if(tflag){

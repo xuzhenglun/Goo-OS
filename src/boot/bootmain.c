@@ -13,6 +13,7 @@
 
 
 struct LAYER *lay_back,*lay_mouse,*lay_win;        //定义鼠标层和背景层
+struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR; //内存管理块的内存位置
 
 void bootmain(void) {
     struct LAYER_CTL * layctl;                     //初始化定义层控制体
@@ -44,7 +45,6 @@ void bootmain(void) {
     timer_settime(timer3, 50);
 
     unsigned int memtotal;                      //内存初始化
-    struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR; //内存管理块的内存位置
     memtotal = memtest(0x00300000, 0xbfffffff); //总内存大小
     mem_init(memman);                            //初始化内存控制块
     mem_free(memman, 0x00300000,memtotal - 0x00300000); //初始化内存页
@@ -98,17 +98,13 @@ void bootmain(void) {
 
     struct TASK *task_b;
     task_init(memman);
-    task_b = task_alloc();
-    task_b->tss.esp = mem_alloc_4k(memman, 64*1024) + 64 * 1024 - 8;
-    task_b->tss.eip = (int)&task_b_main;
-    task_b->tss.es  = 1 << 3;
-    task_b->tss.cs  = 2 << 3;
-    task_b->tss.ss  = 1 << 3;
-    task_b->tss.ds  = 1 << 3;
-    task_b->tss.fs  = 1 << 3;
-    task_b->tss.gs  = 1 << 3;
-    *((int *) (task_b->tss.esp + 4)) = (int) lay_back;
+    task_b = task_alloc(1, (int)&task_b_main, 0, 0, 64);
+    /**((int *) (task_b->tss.esp + 4)) = (int) lay_back;*/
     task_run(task_b);
+
+    struct TASK *task_c;
+    task_c = task_alloc(1, (int)&task_c_main, 0, 0, 64);
+    task_run(task_c);
 
     int x = 8;
     for(;;){
@@ -238,6 +234,37 @@ void task_b_main(void){
         }
     }
 }
+
+void task_c_main(void){
+    struct FIFO8 fifo;
+    struct TIMER *timer_put;
+    int i,fifobuf[128];
+    char s[12];
+    long count = 0;
+
+    fifo8_init(&fifo, 128, fifobuf);
+    timer_put = timer_alloc();
+    timer_init(timer_put, &fifo, 1);
+    timer_settime(timer_put, 1);
+
+    while(1){
+        count++;
+        cli();
+        if(fifo8_status(&fifo) == 0){
+            stihlt();
+        }else
+        {
+            i = fifo8_get(&fifo);
+            sti();
+            if(i == 1){
+                sprintf(s, "%u", count);
+                print_refreshable_font(lay_back, 270, 40, COL8_WHITE, COL8_LD_BLUE,s);
+                timer_settime(timer_put,1);
+            }
+        }
+    }
+}
+
 
 
 

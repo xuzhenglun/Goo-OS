@@ -11,6 +11,7 @@ void io_out8(int16_t port,int8_t date);
 int  io_load_eflags(void);
 void io_store_eflags(int eflags);
 void task_b_main(void);
+void task_c_main(void);
 
 struct BOOTINFO{
     char cyls,leds,vmode,reserve;

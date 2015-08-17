@@ -6,6 +6,7 @@
 
 struct TASKCTRL *taskctrl;
 struct TIMER *task_timer;
+extern struct MEMMAN *memman; //内存管理块的内存位置
 
 struct TASK *task_init(struct MEMMAN *mem){
     struct TASK *task;
@@ -16,23 +17,23 @@ struct TASK *task_init(struct MEMMAN *mem){
          taskctrl->tasks[i].sel   = (TASK_GDT + i) << 3;
          set_segmdesc(gdt + TASK_GDT + i, 103, (int) &taskctrl->tasks[i].tss, AR_TSS32);
     }
-    task = task_alloc();
-    task->flags = TASK_ACTIVING;
+    task = task_alloc(1,0x0,0,0,0);
+    task->flags = TASK_RUNNING;
     taskctrl->running = 1;
-    taskctrl->now     = 0;
-    taskctrl->tasks_p[0] = task;
+    taskctrl->now     = task;
+    taskctrl->INIT = task;
     load_tr(task->sel);
     task_timer = timer_alloc();
     timer_settime(task_timer, 2);
     return task;
 }
 
-struct TASK *task_alloc(void){
+struct TASK *task_alloc(int priority, int task_addr, int argc, char *argv[], int stack_size){
      struct TASK *task;
      for(int i = 0; i < MAX_TASKS; i++){
          if(taskctrl->tasks[i].flags == 0){
              task = &taskctrl->tasks[i];
-             task->flags = 1;
+             task->flags = TASK_SLEEPING;
              task->tss.eflags= 0x00000202;
              task->tss.eax   = 0;
              task->tss.ecx   = 0;
@@ -47,6 +48,16 @@ struct TASK *task_alloc(void){
              task->tss.gs    = 0;
              task->tss.ldtr  = 0;
              task->tss.iomap = 0x40000000;
+             task->priority  = priority;
+             task->tss.esp   = mem_alloc_4k(memman, stack_size *1024) + stack_size * 1024 - argc * sizeof(char);
+             task->tss.eip   = task_addr;
+             task->tss.es    = 1 << 3;
+             task->tss.cs    = 2 << 3;
+             task->tss.ss    = 1 << 3;
+             task->tss.ds    = 1 << 3;
+             task->tss.fs    = 1 << 3;
+             task->tss.gs    = 1 << 3;
+
              return task;
          }
      }
@@ -54,18 +65,41 @@ struct TASK *task_alloc(void){
 }
 
 void task_run(struct TASK *task){
-    task->flags = 2;
-    taskctrl->tasks_p[taskctrl->running] = task;
-    taskctrl->running++;
+    task->flags = TASK_RUNNING;
+
+    if(taskctrl->now->child != 0){
+        struct TASK *tmp = taskctrl->now->child;
+        while(tmp->brother != 0){
+            tmp = tmp->brother;
+        }
+        tmp->brother = task;
+    }else{
+        taskctrl->now->child = task;
+    }
+    task->father = taskctrl->now;
+
+    preorder(taskctrl->INIT, taskctrl);
 }
 
 void task_switch(void){
      timer_settime(task_timer, 2);
-     if(taskctrl->running >= 2){
-         taskctrl->now++;
-         if(taskctrl->now == taskctrl->running){
-              taskctrl->now = 0;
-         }
-         farjump(0,taskctrl->tasks_p[taskctrl->now]->sel);
+     if(taskctrl->running < 2){
+        return;
      }
+     taskctrl->index++;
+     if(taskctrl->index == taskctrl->running){
+         taskctrl->index = 0;
+     }
+     farjump(0,taskctrl->tasks_p[taskctrl->index]->sel);
+}
+
+void preorder(struct TASK *root,struct TASKCTRL *taskctrl){
+    if(root == taskctrl->INIT){
+        taskctrl->running = 0;
+    }
+    if(root != 0){
+        taskctrl->tasks_p[taskctrl->running++] = root;
+        preorder(root->brother,taskctrl);
+        preorder(root->child,  taskctrl);
+    }
 }

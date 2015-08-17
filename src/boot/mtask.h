@@ -6,6 +6,7 @@
 #define AR_TSS32		0x0089
 #define MAX_TASKS       1000
 #define TASK_GDT        3
+#define TASK_ALLOC      0
 #define TASK_SLEEPING   1
 #define TASK_RUNNING    2
 
@@ -35,10 +36,11 @@ struct TASKCTRL{
 
 struct TASK *task_init(struct MEMMAN *mem);
 struct TASK *task_alloc(int priority, int task_addr, int argc, char *argv[], int stack_size);
-void task_run();
+void task_run(struct TASK *task);
 void task_switch();
-void task_sleep();
-void task_kill();
+void task_sleep(struct TASK *task);
+void task_kill(struct TASK *task);
 void preorder(struct TASK *root,struct TASKCTRL *taskctrl);
+void destory_ts(struct TASK *root);
 
 #endif

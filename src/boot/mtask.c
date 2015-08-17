@@ -13,7 +13,7 @@ struct TASK *task_init(struct MEMMAN *mem){
     struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *) ADR_GDT;
     taskctrl = (struct TASKCTRL *)mem_alloc_4k(mem, sizeof(struct TASKCTRL));
     for(int i = 0; i < MAX_TASKS; i++){
-         taskctrl->tasks[i].flags = 0;
+         taskctrl->tasks[i].flags = TASK_ALLOC;
          taskctrl->tasks[i].sel   = (TASK_GDT + i) << 3;
          set_segmdesc(gdt + TASK_GDT + i, 103, (int) &taskctrl->tasks[i].tss, AR_TSS32);
     }
@@ -99,8 +99,33 @@ void preorder(struct TASK *root,struct TASKCTRL *taskctrl){
         taskctrl->running = 0;
     }
     if(root != 0){
+        if(root->flags != TASK_RUNNING){
+            return;
+        }
         taskctrl->tasks_p[taskctrl->running++] = root;
         preorder(root->brother,taskctrl);
         preorder(root->child,  taskctrl);
     }
 }
+
+void task_sleep(struct TASK *task){
+    task->flags = TASK_SLEEPING;
+    preorder(taskctrl->INIT, taskctrl);
+    farjump(0,task->father->sel);
+}
+
+void task_kill(struct TASK *task){
+    int ret = task->father->sel;
+    destory_ts(task);
+    preorder(taskctrl->INIT, taskctrl);
+    farjump(0,ret);
+}
+
+void destory_ts(struct TASK *root){
+    if(root != 0){
+        destory_ts(root->brother);
+        destory_ts(root->child);
+        root->flags = TASK_ALLOC;
+    }
+}
+

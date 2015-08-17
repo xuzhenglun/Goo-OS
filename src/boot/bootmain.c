@@ -102,10 +102,6 @@ void bootmain(void) {
     /**((int *) (task_b->tss.esp + 4)) = (int) lay_back;*/
     task_run(task_b);
 
-    struct TASK *task_c;
-    task_c = task_alloc(1, (int)&task_c_main, 0, 0, 64);
-    task_run(task_c);
-
     int x = 8;
     for(;;){
         unsigned long overflow = -0x100;
@@ -217,6 +213,10 @@ void task_b_main(void){
     timer_init(timer_put, &fifo, 1);
     timer_settime(timer_put, 1);
 
+    struct TASK *task_c;
+    task_c = task_alloc(1, (int)&task_c_main, 0, 0, 64);
+    task_run(task_c);
+
     while(1){
         count++;
         cli();
@@ -264,7 +264,3 @@ void task_c_main(void){
         }
     }
 }
-
-
-
-

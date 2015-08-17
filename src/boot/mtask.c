@@ -90,6 +90,7 @@ void task_switch(void){
      if(taskctrl->index == taskctrl->running){
          taskctrl->index = 0;
      }
+     taskctrl->now = taskctrl->tasks_p[taskctrl->index];
      farjump(0,taskctrl->tasks_p[taskctrl->index]->sel);
 }
 

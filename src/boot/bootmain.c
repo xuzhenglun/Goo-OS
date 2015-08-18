@@ -11,30 +11,38 @@
 #include "timer.h"
 #include "mtask.h"
 
-
+struct LAYER_CTL * layctl;                     //初始化定义层控制体
 struct LAYER *lay_back,*lay_mouse,*lay_win;        //定义鼠标层和背景层
 struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR; //内存管理块的内存位置
-struct TASK *task_b;
 
 void bootmain(void) {
-    struct LAYER_CTL * layctl;                     //初始化定义层控制体
-    char *buf_back,*buf_mouse,*buf_win;
-    init_palette();
-    init_gdtidt();
-    init_pic();
-    init_pit();
+    static char keytable[0x54] = {
+         0,   0,   '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 0,   0,
+        'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '[', ']', 0,   0,   'A', 'S',
+        'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', '\'', 0,   0,   '\\', 'Z', 'X', 'C', 'V',
+        'B', 'N', 'M', ',', '.', '/', 0,   '*', 0,   ' ', 0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   '7', '8', '9', '-', '4', '5', '6', '+', '1',
+        '2', '3', '0', '.'
+    };
 
     struct BOOTINFO *binfo;                        //从内存中找到在IPL中保存的图形参数
     binfo = (struct BOOTINFO *) 0x0ff0;
     char s[40];                                    //文字输出缓存，（在栈中）
 
+    init_palette();
+    init_gdtidt();
+    init_pic();
+    init_pit();
+
+
+    char *buf_back,*buf_mouse,*buf_win;
     char keybuf[32],mousebuf[128],timerbuf[32];                //鼠标和键盘中断缓存，（在栈中）
     struct FIFO8 timerfifo;
-    struct TIMER *timer,*timer2,*timer3;
     fifo8_init(&keyfifo,   32,  keybuf  );
     fifo8_init(&mousefifo, 128, mousebuf);
     fifo8_init(&timerfifo, 32, timerbuf);
 
+    struct TIMER *timer,*timer2,*timer3;
     timer = timer_alloc();
     timer_init(timer, &timerfifo, 10);
     timer_settime(timer, 1000);
@@ -50,60 +58,76 @@ void bootmain(void) {
     mem_init(memman);                            //初始化内存控制块
     mem_free(memman, 0x00300000,memtotal - 0x00300000); //初始化内存页
 
-
     layctl = layer_ctl_init(memman,binfo->vram,binfo->scrnx,binfo->scrny);  //初始化层控制块
+
+    task_init(memman);
+
+    /* 背景层 */
     lay_back = layer_alloc(layctl);                                            //创建背景层
-    lay_mouse = layer_alloc(layctl);                                        //创建鼠标层
-    lay_win   = layer_alloc(layctl);                                        //创建窗口层
     buf_back = (unsigned char *) mem_alloc_4k(memman,binfo->scrnx * binfo->scrny);
-    buf_mouse = (unsigned char *) mem_alloc_4k(memman,16*16);
-    buf_win   = (unsigned char *) mem_alloc_4k(memman,160 * 52);
     layer_setbuf(lay_back,buf_back,binfo->scrnx,binfo->scrny,-1);             //设定背景层
-    layer_setbuf(lay_mouse,buf_mouse,16,16,99);                                //设定鼠标层（透明色为99）
-    layer_setbuf(lay_win  ,buf_win,160,52,-1);
-
-
     init_screen8(buf_back, binfo->scrnx,binfo->scrny);                         //画一下桌面
-    make_window8(buf_win,160,52,"TYPING");
-    make_textbox(lay_win,8,28,144,16,COL8_WHITE);
-
     sprintf(s,"| MEMORY:%dMB|FREE:%dKB",memtotal /(1024*1024),mem_total(memman)/1024); //输出内存消息
     print_fonts(buf_back ,binfo->scrnx,100,8,COL8_WHITE,s);
-
     sprintf(s,"%d * %d ",binfo->scrnx,binfo->scrny);                                    //输出屏幕分辨率
     print_fonts(buf_back ,binfo->scrnx,8,8,COL8_WHITE,s);
+    layer_slide(lay_back,0,0);                                                //把背景层偏移搭到（0，0）
+    layer_updown(lay_back,0);                                                //设定背景层为0层
 
+    /* 鼠标层 */
+    lay_mouse = layer_alloc(layctl);                                        //创建鼠标层
+    buf_mouse = (unsigned char *) mem_alloc_4k(memman,16*16);
+    layer_setbuf(lay_mouse,buf_mouse,16,16,99);                                //设定鼠标层（透明色为99）
+    init_mouse_cursor(buf_mouse,99);                                                //在鼠标层写入图形数据
     int mx,my;
     mx = (binfo->scrnx - 16) / 2;
     my = (binfo->scrny - 28 - 16) / 2;
-    init_mouse_cursor(buf_mouse,99);                                                //在鼠标层写入图形数据
-
-    layer_slide(lay_back,0,0);                                                //把背景层偏移搭到（0，0）
     layer_slide(lay_mouse,mx,my);                                            //把鼠标层偏移到中间位置
-    layer_slide(lay_win,80,72);
-    layer_updown(lay_back,0);                                                //设定背景层为0层
-    layer_updown(lay_win,1);
     layer_updown(lay_mouse,2);                                                //设定鼠标层为1层
 
+    /* 窗口层 */
+    lay_win   = layer_alloc(layctl);                                        //创建窗口层
+    buf_win   = (unsigned char *) mem_alloc_4k(memman,160 * 52);
+    layer_setbuf(lay_win  ,buf_win,160,52,-1);
+    make_window8(buf_win,160,52,"TYPING",1);
+    make_textbox(lay_win,8,28,144,16,COL8_WHITE);
+    layer_slide(lay_win,8,56);
+    layer_updown(lay_win,1);
+
+    /* 鼠标键盘中断开 */
     sti();
     io_out8(PIC0_IMR, 0xf8); /* PIC1とキーボードを許可(11111001) */                    //开始接受鼠标和键盘中断
     io_out8(PIC1_IMR, 0xef); /* マウスを許可(11101111) */
-
-    int kflag,mflag,tflag;                                                                //初始化键盘鼠标中断相关变量
     unsigned char mouse_dbuff[3];
     struct MOUSE_DEC mdec;
     init_keyboard();
     enable_mouse(&mdec);
 
-    layer_refresh(lay_back,0,0,binfo->scrnx,48);
-
-    task_init(memman);
-    task_b = task_alloc(1, (int)&task_b_main, 0, 0, 64);
-    /**((int *) (task_b->tss.esp + 4)) = (int) lay_back;*/
-    task_run(task_b);
-    fifo8_taskwaker(&mousefifo,task_b);
-
+    /* main主循环部分变量初始化 */
+    int kflag,mflag,tflag;                                                                //初始化键盘鼠标中断相关变量
     int x = 8;
+
+    /* task_b * 3 */
+    struct TASK *task_b[3];
+    unsigned char *buf_task_b;
+    struct LAYER *task_b_lay[3];
+    for(int i = 0; i < 3; i++){
+        task_b[i] = task_alloc(1, (int)&task_b_main, 1, 64);
+        task_b_lay[i] = layer_alloc(layctl);
+		buf_task_b = (unsigned char *) mem_alloc_4k(memman, 160 * 52);
+		layer_setbuf(task_b_lay[i], buf_task_b, 160,52, -1); /* 透明色なし */
+		sprintf(s, "task_b%d", i);
+		make_window8(buf_task_b, 160,52, s, 0);
+        *((int *) (task_b[i]->tss.esp + 4)) = (int) task_b_lay[i];
+        task_run(task_b[i]);
+    }
+	layer_slide(task_b_lay[0], 178,  56);
+	layer_slide(task_b_lay[1],   8, 116);
+	layer_slide(task_b_lay[2], 178, 116);
+    layer_updown(task_b_lay[0], 1);
+	layer_updown(task_b_lay[1], 2);
+	layer_updown(task_b_lay[2], 3);
+
     for(;;){
         unsigned long overflow = -0x100;
         if(timerctrl.count >= overflow){
@@ -120,15 +144,6 @@ void bootmain(void) {
                 cli();
                 unsigned char i = fifo8_get(&keyfifo);
                 sti();
-                static char keytable[0x54] = {
-                    0,   0,   '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 0,   0,
-                    'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '[', ']', 0,   0,   'A', 'S',
-                    'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', '\'', 0,   0,   '\\', 'Z', 'X', 'C', 'V',
-                    'B', 'N', 'M', ',', '.', '/', 0,   '*', 0,   ' ', 0,   0,   0,   0,   0,   0,
-                    0,   0,   0,   0,   0,   0,   0,   '7', '8', '9', '-', '4', '5', '6', '+', '1',
-                    '2', '3', '0', '.'
-                };
-                char s[4];
                 sprintf(s ,"%02X", i );
                 print_refreshable_font(lay_back,0,25,COL8_WHITE,COL8_LD_BLUE,s);
                 if(0 <= i && i <= 511-256 && i < 0x54){
@@ -150,10 +165,8 @@ void bootmain(void) {
                 unsigned char i = fifo8_get(&mousefifo);
                 sti();
                 if(mouse_decode(&mdec, i) != 0){                                //解码鼠标中断带来的数据
-                    char s[30];
                     sprintf(s ,"%02X %02X %02X", mdec.buf[0],mdec.buf[1],mdec.buf[2]);
                     print_refreshable_font(lay_back,32,24,COL8_WHITE,COL8_LD_BLUE,s);
-
                     sprintf(s, "[lcr,%4d,%4d]",mdec.x,mdec.y);
                     if((mdec.btn & 0x01) != 0)
                         s[1] = 'L';
@@ -206,66 +219,32 @@ void bootmain(void) {
     }
 }
 
-void task_b_main(void){
+void task_b_main(struct LAYER *lay_win_b){
     struct FIFO8 fifo;
     struct TIMER *timer_put;
     int i,fifobuf[128];
     char s[12];
-    long count = 0;
+    long count0,count = 0;
 
     fifo8_init(&fifo, 128, fifobuf);
     timer_put = timer_alloc();
-    timer_init(timer_put, &fifo, 1);
-    timer_settime(timer_put, 1);
-
-    struct TASK *task_c;
-    task_c = task_alloc(1, (int)&task_c_main, 0, 0, 64);
-    task_run(task_c);
+    timer_init(timer_put, &fifo, 4);
+    timer_settime(timer_put, 100);
 
     while(1){
         count++;
         cli();
         if(fifo8_status(&fifo) == 0){
-            stihlt();
+             sti();
         }else
         {
             i = fifo8_get(&fifo);
             sti();
-            if(i == 1){
-                sprintf(s, "%u", count);
-                print_refreshable_font(lay_back, 270, 24, COL8_WHITE, COL8_LD_BLUE,s);
-                timer_settime(timer_put,1);
-            }
-        }
-    }
-}
-
-void task_c_main(void){
-    struct FIFO8 fifo;
-    struct TIMER *timer_put;
-    int i,fifobuf[128];
-    char s[12];
-    long count = 0;
-
-    fifo8_init(&fifo, 128, fifobuf);
-    timer_put = timer_alloc();
-    timer_init(timer_put, &fifo, 1);
-    timer_settime(timer_put, 1);
-
-    while(1){
-    task_sleep(task_b);
-        count++;
-        cli();
-        if(fifo8_status(&fifo) == 0){
-            stihlt();
-        }else
-        {
-            i = fifo8_get(&fifo);
-            sti();
-            if(i == 1){
-                sprintf(s, "%u", count);
-                print_refreshable_font(lay_back, 270, 40, COL8_WHITE, COL8_LD_BLUE,s);
-                timer_settime(timer_put,1);
+            if(i == 4){
+                sprintf(s, "%u", count - count0);
+                print_refreshable_font(lay_win_b, 34, 28, COL8_BLACK, COL8_GREY,s);
+                count0 = count;
+                timer_settime(timer_put, 100);
             }
         }
     }

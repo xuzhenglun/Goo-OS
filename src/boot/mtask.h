@@ -35,7 +35,7 @@ struct TASKCTRL{
 };
 
 struct TASK *task_init(struct MEMMAN *mem);
-struct TASK *task_alloc(int priority, int task_addr, int argc, char *argv[], int stack_size);
+struct TASK *task_alloc(int priority, int task_addr, int argc, int stack_size);
 void task_run(struct TASK *task);
 void task_switch();
 void task_sleep(struct TASK *task);

@@ -17,7 +17,7 @@ struct TASK *task_init(struct MEMMAN *mem){
          taskctrl->tasks[i].sel   = (TASK_GDT + i) << 3;
          set_segmdesc(gdt + TASK_GDT + i, 103, (int) &taskctrl->tasks[i].tss, AR_TSS32);
     }
-    task = task_alloc(1,0x0,0,0,0);
+    task = task_alloc(1,0x0,0,0);
     task->flags = TASK_RUNNING;
     task->father = 0xffffffff;//INIT 任务没有父进程，与初始化进程的父进程为0作区别，取-1
     taskctrl->running = 1;
@@ -29,7 +29,7 @@ struct TASK *task_init(struct MEMMAN *mem){
     return task;
 }
 
-struct TASK *task_alloc(int priority, int task_addr, int argc, char *argv[], int stack_size){
+struct TASK *task_alloc(int priority, int task_addr, int argc, int stack_size){
      struct TASK *task;
      for(int i = 0; i < MAX_TASKS; i++){
          if(taskctrl->tasks[i].flags == 0){
@@ -50,7 +50,7 @@ struct TASK *task_alloc(int priority, int task_addr, int argc, char *argv[], int
              task->tss.ldtr  = 0;
              task->tss.iomap = 0x40000000;
              task->priority  = priority;
-             task->tss.esp   = mem_alloc_4k(memman, stack_size *1024) + stack_size * 1024 - argc * sizeof(char);
+             task->tss.esp   = mem_alloc_4k(memman, stack_size *1024) + stack_size * 1024 - argc * 4 - 8;
              task->tss.eip   = task_addr;
              task->tss.es    = 1 << 3;
              task->tss.cs    = 2 << 3;

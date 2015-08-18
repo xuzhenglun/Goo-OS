@@ -114,19 +114,19 @@ void bootmain(void) {
     for(int i = 0; i < 3; i++){
         task_b[i] = task_alloc(1, (int)&task_b_main, 1, 64);
         task_b_lay[i] = layer_alloc(layctl);
-		buf_task_b = (unsigned char *) mem_alloc_4k(memman, 160 * 52);
-		layer_setbuf(task_b_lay[i], buf_task_b, 160,52, -1); /* 透明色なし */
-		sprintf(s, "task_b%d", i);
-		make_window8(buf_task_b, 160,52, s, 0);
+        buf_task_b = (unsigned char *) mem_alloc_4k(memman, 160 * 52);
+        layer_setbuf(task_b_lay[i], buf_task_b, 160,52, -1); /* 透明色なし */
+        sprintf(s, "task_b%d", i);
+        make_window8(buf_task_b, 160,52, s, 0);
         *((int *) (task_b[i]->tss.esp + 4)) = (int) task_b_lay[i];
         task_run(task_b[i]);
     }
-	layer_slide(task_b_lay[0], 178,  56);
-	layer_slide(task_b_lay[1],   8, 116);
-	layer_slide(task_b_lay[2], 178, 116);
+    layer_slide(task_b_lay[0], 178,  56);
+    layer_slide(task_b_lay[1],   8, 116);
+    layer_slide(task_b_lay[2], 178, 116);
     layer_updown(task_b_lay[0], 1);
-	layer_updown(task_b_lay[1], 2);
-	layer_updown(task_b_lay[2], 3);
+    layer_updown(task_b_lay[1], 2);
+    layer_updown(task_b_lay[2], 3);
 
     for(;;){
         unsigned long overflow = -0x100;

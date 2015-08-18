@@ -39,6 +39,7 @@ struct TASK *task_alloc(int priority, int task_addr, int argc, char *argv[], int
 void task_run(struct TASK *task);
 void task_switch();
 void task_sleep(struct TASK *task);
+void task_wake(struct TASK *task);
 void task_kill(struct TASK *task);
 void preorder(struct TASK *root,struct TASKCTRL *taskctrl);
 void destory_ts(struct TASK *root);

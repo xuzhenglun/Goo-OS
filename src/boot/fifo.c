@@ -1,4 +1,5 @@
 #include "fifo.h"
+#include "mtask.h"
 
 void fifo8_init(struct FIFO8 *fifo, int size, unsigned char *buf){
     fifo->size = size;
@@ -6,6 +7,7 @@ void fifo8_init(struct FIFO8 *fifo, int size, unsigned char *buf){
     fifo->flags= 0;
     fifo->head = 0;
     fifo->tail = 0;
+    fifo->task = 0;
     return;
 }
 
@@ -18,6 +20,13 @@ int fifo8_put(struct FIFO8 *fifo, unsigned char data){
     fifo->buf[fifo->tail++] = data;
     if(fifo->tail == fifo->size)
         fifo->tail = 0;
+
+    if(fifo->task != 0){
+        if(fifo->task->flags != TASK_RUNNING){
+            task_wake(fifo->task);
+        }
+    }
+
     return 0;
     }
 }
@@ -37,4 +46,8 @@ int fifo8_get(struct FIFO8 *fifo){
 
 int fifo8_status(struct FIFO8 *fifo){
     return (fifo->tail - fifo->head + fifo->size ) % fifo->size;
+}
+
+void fifo8_taskwaker(struct FIFO8 *fifo,struct TASK *task){
+     fifo->task = task;
 }

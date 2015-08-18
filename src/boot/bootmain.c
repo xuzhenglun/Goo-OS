@@ -14,7 +14,7 @@
 
 struct LAYER *lay_back,*lay_mouse,*lay_win;        //定义鼠标层和背景层
 struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR; //内存管理块的内存位置
-    struct TASK *task_b;
+struct TASK *task_b;
 
 void bootmain(void) {
     struct LAYER_CTL * layctl;                     //初始化定义层控制体
@@ -101,6 +101,7 @@ void bootmain(void) {
     task_b = task_alloc(1, (int)&task_b_main, 0, 0, 64);
     /**((int *) (task_b->tss.esp + 4)) = (int) lay_back;*/
     task_run(task_b);
+    fifo8_taskwaker(&mousefifo,task_b);
 
     int x = 8;
     for(;;){
@@ -251,9 +252,8 @@ void task_c_main(void){
     timer_init(timer_put, &fifo, 1);
     timer_settime(timer_put, 1);
 
-    task_kill(task_b);
-
     while(1){
+    task_sleep(task_b);
         count++;
         cli();
         if(fifo8_status(&fifo) == 0){

@@ -19,6 +19,7 @@ struct TASK *task_init(struct MEMMAN *mem){
     }
     task = task_alloc(1,0x0,0,0,0);
     task->flags = TASK_RUNNING;
+    task->father = 0xffffffff;//INIT 任务没有父进程，与初始化进程的父进程为0作区别，取-1
     taskctrl->running = 1;
     taskctrl->now     = task;
     taskctrl->INIT = task;
@@ -57,7 +58,7 @@ struct TASK *task_alloc(int priority, int task_addr, int argc, char *argv[], int
              task->tss.ds    = 1 << 3;
              task->tss.fs    = 1 << 3;
              task->tss.gs    = 1 << 3;
-
+             task->father    = 0;
              return task;
          }
      }
@@ -99,11 +100,11 @@ void preorder(struct TASK *root,struct TASKCTRL *taskctrl){
         taskctrl->running = 0;
     }
     if(root != 0){
+        preorder(root->brother,taskctrl);
         if(root->flags != TASK_RUNNING){
             return;
         }
         taskctrl->tasks_p[taskctrl->running++] = root;
-        preorder(root->brother,taskctrl);
         preorder(root->child,  taskctrl);
     }
 }
@@ -129,3 +130,8 @@ void destory_ts(struct TASK *root){
     }
 }
 
+void task_wake(struct TASK *task){
+    task->flags = TASK_RUNNING;
+    preorder(taskctrl->INIT, taskctrl);
+    farjump(0,task->sel);
+}

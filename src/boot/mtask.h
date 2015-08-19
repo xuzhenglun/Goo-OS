@@ -43,5 +43,6 @@ void task_wake(struct TASK *task);
 void task_kill(struct TASK *task);
 void preorder(struct TASK *root,struct TASKCTRL *taskctrl);
 void destory_ts(struct TASK *root);
+void task_set_priority(struct TASK *task,int priority);
 
 #endif

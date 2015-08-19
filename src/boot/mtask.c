@@ -19,7 +19,7 @@ struct TASK *task_init(struct MEMMAN *mem){
     }
     task = task_alloc(1,0x0,0,0);
     task->flags = TASK_RUNNING;
-    task->father = 0xffffffff;//INIT 任务没有父进程，与初始化进程的父进程为0作区别，取-1
+    task->father = -1;//INIT 任务没有父进程，与初始化进程的父进程为0作区别，取-1
     taskctrl->running = 1;
     taskctrl->now     = task;
     taskctrl->INIT = task;
@@ -83,7 +83,6 @@ void task_run(struct TASK *task){
 }
 
 void task_switch(void){
-     timer_settime(task_timer, 2);
      if(taskctrl->running < 2){
         return;
      }
@@ -91,6 +90,7 @@ void task_switch(void){
      if(taskctrl->index == taskctrl->running){
          taskctrl->index = 0;
      }
+     timer_settime(task_timer, taskctrl->tasks_p[taskctrl->index]->priority);
      taskctrl->now = taskctrl->tasks_p[taskctrl->index];
      farjump(0,taskctrl->tasks_p[taskctrl->index]->sel);
 }
@@ -110,9 +110,13 @@ void preorder(struct TASK *root,struct TASKCTRL *taskctrl){
 }
 
 void task_sleep(struct TASK *task){
-    task->flags = TASK_SLEEPING;
-    preorder(taskctrl->INIT, taskctrl);
-    farjump(0,task->father->sel);
+    if(task->father == -1){
+        hlt();
+    }else{
+        task->flags = TASK_SLEEPING;
+        preorder(taskctrl->INIT, taskctrl);
+        farjump(0,task->father->sel);
+    }
 }
 
 void task_kill(struct TASK *task){
@@ -134,4 +138,8 @@ void task_wake(struct TASK *task){
     task->flags = TASK_RUNNING;
     preorder(taskctrl->INIT, taskctrl);
     farjump(0,task->sel);
+}
+
+void task_set_priority(struct TASK *task,int priority){
+    task->priority = priority;
 }

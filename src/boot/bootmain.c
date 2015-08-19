@@ -60,7 +60,8 @@ void bootmain(void) {
 
     layctl = layer_ctl_init(memman,binfo->vram,binfo->scrnx,binfo->scrny);  //初始化层控制块
 
-    task_init(memman);
+    struct TASK * INIT = task_init(memman);
+    task_set_priority(INIT,10);
 
     /* 背景层 */
     lay_back = layer_alloc(layctl);                                            //创建背景层
@@ -121,6 +122,7 @@ void bootmain(void) {
         *((int *) (task_b[i]->tss.esp + 4)) = (int) task_b_lay[i];
         task_run(task_b[i]);
     }
+    task_set_priority(task_b[0],2);
     layer_slide(task_b_lay[0], 178,  56);
     layer_slide(task_b_lay[1],   8, 116);
     layer_slide(task_b_lay[2], 178, 116);
@@ -138,7 +140,12 @@ void bootmain(void) {
         mflag = fifo8_status(&mousefifo);
         tflag = fifo8_status(&timerfifo);
         sti();
-        if( kflag || mflag || tflag){                                                //键盘或者鼠标的中断缓存有数据的时候进入
+        if( kflag == 0 && mflag == 0 && tflag == 0){
+            sti();
+            fifo8_taskwaker(&mousefifo,INIT);
+            task_sleep(INIT);
+        }
+        else{                                  //键盘或者鼠标的中断缓存有数据的时候进入
             if(kflag)                                                           //键盘部分
             {
                 cli();
@@ -213,9 +220,7 @@ void bootmain(void) {
                     timer_settime(timer3, 50);
                 }
             }
-        else
-        sti();
-         }
+        }
     }
 }
 
@@ -224,7 +229,7 @@ void task_b_main(struct LAYER *lay_win_b){
     struct TIMER *timer_put;
     int i,fifobuf[128];
     char s[12];
-    long count0,count = 0;
+    long count0 = 0,count = 0;
 
     fifo8_init(&fifo, 128, fifobuf);
     timer_put = timer_alloc();

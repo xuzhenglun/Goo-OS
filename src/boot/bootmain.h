@@ -12,7 +12,7 @@ void cli(void);
 void io_out8(int16_t port,int8_t date);
 int  io_load_eflags(void);
 void io_store_eflags(int eflags);
-void task_b_main(struct LAYER *lay_win_b);
+void task_cons_main(struct LAYER *lay_win_b);
 
 struct BOOTINFO{
     char cyls,leds,vmode,reserve;

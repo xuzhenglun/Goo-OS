@@ -143,3 +143,7 @@ void task_wake(struct TASK *task){
 void task_set_priority(struct TASK *task,int priority){
     task->priority = priority;
 }
+
+struct TASK *task_now(void){
+    return taskctrl->now;
+}

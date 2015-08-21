@@ -62,6 +62,7 @@ void bootmain(void) {
 
     struct TASK * INIT = task_init(memman);
     task_set_priority(INIT,10);
+    fifo8_taskwaker(&mousefifo,INIT);
 
     /* 背景层 */
     lay_back = layer_alloc(layctl);                                            //创建背景层
@@ -108,27 +109,21 @@ void bootmain(void) {
     int kflag,mflag,tflag;                                                                //初始化键盘鼠标中断相关变量
     int x = 8;
 
-    /* task_b * 3 */
-    struct TASK *task_b[3];
-    unsigned char *buf_task_b;
-    struct LAYER *task_b_lay[3];
-    for(int i = 0; i < 3; i++){
-        task_b[i] = task_alloc(1, (int)&task_b_main, 1, 64);
-        task_b_lay[i] = layer_alloc(layctl);
-        buf_task_b = (unsigned char *) mem_alloc_4k(memman, 160 * 52);
-        layer_setbuf(task_b_lay[i], buf_task_b, 160,52, -1); /* 透明色なし */
-        sprintf(s, "task_b%d", i);
-        make_window8(buf_task_b, 160,52, s, 0);
-        *((int *) (task_b[i]->tss.esp + 4)) = (int) task_b_lay[i];
-        task_run(task_b[i]);
-    }
-    task_set_priority(task_b[0],2);
-    layer_slide(task_b_lay[0], 178,  56);
-    layer_slide(task_b_lay[1],   8, 116);
-    layer_slide(task_b_lay[2], 178, 116);
-    layer_updown(task_b_lay[0], 1);
-    layer_updown(task_b_lay[1], 2);
-    layer_updown(task_b_lay[2], 3);
+    /* task_console */
+    struct TASK *task_cons;
+    unsigned char *buf_task_cons;
+    struct LAYER *task_cons_lay;
+    task_cons = task_alloc(1, (int)&task_cons_main, 1, 64);
+    task_cons_lay = layer_alloc(layctl);
+    buf_task_cons = (unsigned char *) mem_alloc_4k(memman, 256 * 165);
+    layer_setbuf(task_cons_lay, buf_task_cons, 256,165, -1); /* 透明色なし */
+    make_window8(buf_task_cons, 256,165, "Console", 0);
+    make_textbox(task_cons_lay,8,28,240,128,COL8_BLACK);
+    *((int *) (task_cons->tss.esp + 4)) = (int) task_cons_lay;
+    task_run(task_cons);
+    task_set_priority(task_cons,2);
+    layer_slide(task_cons_lay, 178,  56);
+    layer_updown(task_cons_lay, 1);
 
     for(;;){
         unsigned long overflow = -0x100;
@@ -142,8 +137,7 @@ void bootmain(void) {
         sti();
         if( kflag == 0 && mflag == 0 && tflag == 0){
             sti();
-            fifo8_taskwaker(&mousefifo,INIT);
-            task_sleep(INIT);
+            /*task_sleep(INIT);*/
         }
         else{                                  //键盘或者鼠标的中断缓存有数据的时候进入
             if(kflag)                                                           //键盘部分
@@ -203,10 +197,11 @@ void bootmain(void) {
                 unsigned char i = fifo8_get(&timerfifo);
                 sti();
                 if(i == 10){
-                    print_refreshable_font(lay_back,170,24,COL8_WHITE,COL8_LD_BLUE,"10[sec]");
+                    print_refreshable_font(lay_back,170,28,COL8_WHITE,COL8_LD_BLUE,"10[sec]");
                 }
                 if(i == 3){
-                    print_refreshable_font(lay_back,170,40,COL8_WHITE,COL8_LD_BLUE,"3[sec]");
+                    print_refreshable_font(lay_back,170,28,COL8_WHITE,COL8_LD_BLUE,"3[sec]");
+                    timer_settime(timer2, 300);
                 }
                 if( i <= 1){
                     if (i == 1) {
@@ -224,33 +219,42 @@ void bootmain(void) {
     }
 }
 
-void task_b_main(struct LAYER *lay_win_b){
+void task_cons_main(struct LAYER *layer){
     struct FIFO8 fifo;
     struct TIMER *timer_put;
-    int i,fifobuf[128];
+    int i,fifobuf[128],color;
     char s[12];
-    long count0 = 0,count = 0;
+    int x,y;
 
     fifo8_init(&fifo, 128, fifobuf);
     timer_put = timer_alloc();
-    timer_init(timer_put, &fifo, 4);
-    timer_settime(timer_put, 100);
+    timer_init(timer_put, &fifo, 1);
+    timer_settime(timer_put, 50);
+    fifo8_taskwaker(&fifo,task_now());
+
+    x = 8;
 
     while(1){
-        count++;
         cli();
         if(fifo8_status(&fifo) == 0){
+            task_sleep(task_now());
              sti();
         }else
         {
             i = fifo8_get(&fifo);
             sti();
-            if(i == 4){
-                sprintf(s, "%u", count - count0);
-                print_refreshable_font(lay_win_b, 34, 28, COL8_BLACK, COL8_GREY,s);
-                count0 = count;
-                timer_settime(timer_put, 100);
+            if( i <= 1 ){
+                if(i == 1){
+                    timer_init(timer_put,&fifo,0);
+                    color = COL8_WHITE;
+                }else{
+                    timer_init(timer_put,&fifo,1);
+                    color = COL8_BLACK;
+                }
             }
+            timer_settime(timer_put, 50);
+            boxfill8(layer->buf, layer->bxsize, color, x, 28, x+7,43);
+            layer_refresh(layer, 8, 28, x+7, 43);
         }
     }
 }

@@ -36,6 +36,9 @@ void timer_init(struct TIMER *timer, struct FIFO8 *fifo, unsigned char data){
 }
 
 void timer_settime(struct TIMER *timer,unsigned int timeout){
+    if(timer->flags == TIMER_FLAGS_USING){
+        remove_timer(timer);
+    }
      timer->timeout = timeout + timerctrl.count;
      timer->flags   = TIMER_FLAGS_USING;
      int eflags = io_load_eflags();
@@ -67,4 +70,18 @@ void timer_refresh(void){
          }
      }
      sti();
+}
+
+void remove_timer(struct TIMER *timer){
+    struct TIMER *tmp = timerctrl.head;
+    if(timerctrl.head == timer){
+        timerctrl.head->flags = TIMER_FLAGS_ALLOC;
+        timerctrl.head = timerctrl.head->next;
+    }else{
+        while(tmp->next != timer){
+             tmp = tmp->next;
+        }
+        tmp->next = timer->next;
+        timer->flags = TIMER_FLAGS_ALLOC;
+    }
 }

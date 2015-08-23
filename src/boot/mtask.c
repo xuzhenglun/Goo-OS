@@ -83,16 +83,16 @@ void task_run(struct TASK *task){
 }
 
 void task_switch(void){
-     if(taskctrl->running < 2){
-        return;
+     timer_settime(task_timer, taskctrl->now->priority);
+     if(taskctrl->running >= 2){
+         taskctrl->index++;
+         if(taskctrl->index >= taskctrl->running){
+             taskctrl->index = 0;
+         }
+         if(taskctrl->now != taskctrl->tasks_p[taskctrl->index]){
+         taskctrl->now = taskctrl->tasks_p[taskctrl->index];
+         farjump(0,taskctrl->tasks_p[taskctrl->index]->sel);}
      }
-     taskctrl->index++;
-     if(taskctrl->index == taskctrl->running){
-         taskctrl->index = 0;
-     }
-     timer_settime(task_timer, taskctrl->tasks_p[taskctrl->index]->priority);
-     taskctrl->now = taskctrl->tasks_p[taskctrl->index];
-     farjump(0,taskctrl->tasks_p[taskctrl->index]->sel);
 }
 
 void preorder(struct TASK *root,struct TASKCTRL *taskctrl){
@@ -110,11 +110,13 @@ void preorder(struct TASK *root,struct TASKCTRL *taskctrl){
 }
 
 void task_sleep(struct TASK *task){
-    if(task->father == -1){
+    if(task->father == -1 || taskctrl->running == 1){
         hlt();
     }else{
         task->flags = TASK_SLEEPING;
         preorder(taskctrl->INIT, taskctrl);
+        timer_settime(task_timer, task->father->priority);
+        taskctrl->now = task->father;
         farjump(0,task->father->sel);
     }
 }
@@ -123,6 +125,7 @@ void task_kill(struct TASK *task){
     int ret = task->father->sel;
     destory_ts(task);
     preorder(taskctrl->INIT, taskctrl);
+    timer_settime(task_timer, task->father->priority);
     farjump(0,ret);
 }
 
@@ -135,9 +138,12 @@ void destory_ts(struct TASK *root){
 }
 
 void task_wake(struct TASK *task){
-    task->flags = TASK_RUNNING;
-    preorder(taskctrl->INIT, taskctrl);
-    farjump(0,task->sel);
+/*     if(taskctrl->running == 1 && task->flags == TASK_RUNNING){
+        return;
+    }else */{
+        task->flags = TASK_RUNNING;
+        preorder(taskctrl->INIT, taskctrl);
+    }
 }
 
 void task_set_priority(struct TASK *task,int priority){

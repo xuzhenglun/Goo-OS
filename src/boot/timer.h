@@ -27,5 +27,6 @@ void timer_free(struct TIMER *timer);
 void timer_init(struct TIMER *timer, struct FIFO8 *fifo, unsigned char data);
 void timer_settime(struct TIMER *timer,unsigned int timeout);
 void timer_refresh(void);
+void remove_timer(struct TIMER *timer);
 
 #endif

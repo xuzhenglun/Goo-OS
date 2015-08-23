@@ -90,8 +90,8 @@ void task_switch(void){
              taskctrl->index = 0;
          }
          if(taskctrl->now != taskctrl->tasks_p[taskctrl->index]){
-         taskctrl->now = taskctrl->tasks_p[taskctrl->index];
-         farjump(0,taskctrl->tasks_p[taskctrl->index]->sel);}
+             taskctrl->now = taskctrl->tasks_p[taskctrl->index];
+             farjump(0,taskctrl->tasks_p[taskctrl->index]->sel);}
      }
 }
 
@@ -138,9 +138,9 @@ void destory_ts(struct TASK *root){
 }
 
 void task_wake(struct TASK *task){
-/*     if(taskctrl->running == 1 && task->flags == TASK_RUNNING){
+    if(taskctrl->running == 1 && task->flags == TASK_RUNNING){
         return;
-    }else */{
+    }else{
         task->flags = TASK_RUNNING;
         preorder(taskctrl->INIT, taskctrl);
     }

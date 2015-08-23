@@ -62,7 +62,7 @@ void bootmain(void) {
 
     struct TASK * INIT = task_init(memman);
     task_set_priority(INIT,10);
-    /* fifo8_taskwaker(&mousefifo,INIT); */
+    fifo8_taskwaker(&mousefifo,INIT);
 
     /* 背景层 */
     lay_back = layer_alloc(layctl);                                            //创建背景层
@@ -121,7 +121,7 @@ void bootmain(void) {
     make_textbox(task_cons_lay,8,28,240,128,COL8_BLACK);
     *((int *) (task_cons->tss.esp + 4)) = (int) task_cons_lay;
     task_run(task_cons);
-    task_set_priority(task_cons,3);
+    task_set_priority(task_cons,2);
     layer_slide(task_cons_lay, 178,  56);
     layer_updown(task_cons_lay, 1);
 
@@ -137,7 +137,7 @@ void bootmain(void) {
         sti();
         if( kflag == 0 && mflag == 0 && tflag == 0){
             sti();
-            /* task_sleep(INIT); */
+            task_sleep(INIT);
         }
         else{                                  //键盘或者鼠标的中断缓存有数据的时候进入
             if(kflag)                                                           //键盘部分

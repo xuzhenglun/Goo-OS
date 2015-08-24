@@ -139,7 +139,7 @@ void init_screen8(char * vram, int xsize,int ysize){
 
 }
 
-void make_window8(char * buf, int xsize,int ysize,char *title, int act){
+void make_wtitle8(char * buf, int xsize, char *title, int act){
 	static char closebtn[14][16] = {
 		"OOOOOOOOOOOOOOO@",
 		"OQQQQQQQQQQQQQ$@",
@@ -166,16 +166,8 @@ void make_window8(char * buf, int xsize,int ysize,char *title, int act){
         tbc = COL8_D_GREY;
     }
 
-    boxfill8(buf, xsize, COL8_GREY, 0,         0,         xsize - 1, 0        );
-    boxfill8(buf, xsize, COL8_WHITE, 1,         1,         xsize - 2, 1        );
-    boxfill8(buf, xsize, COL8_GREY, 0,         0,         0,         ysize - 1);
-    boxfill8(buf, xsize, COL8_WHITE, 1,         1,         1,         ysize - 2);
-    boxfill8(buf, xsize, COL8_D_GREY, xsize - 2, 1,         xsize - 2, ysize - 2);
-    boxfill8(buf, xsize, COL8_BLACK, xsize - 1, 0,         xsize - 1, ysize - 1);
-    boxfill8(buf, xsize, COL8_GREY, 2,         2,         xsize - 3, ysize - 3);
-    boxfill8(buf, xsize, tbc      , 3,         3,         xsize - 4, 20       );
-    boxfill8(buf, xsize, COL8_D_GREY, 1,         ysize - 2, xsize - 2, ysize - 2);
-    boxfill8(buf, xsize, COL8_BLACK, 0,         ysize - 1, xsize - 1, ysize - 1);
+    boxfill8(buf, xsize, tbc, 3, 3, xsize - 4, 20);
+
     print_fonts(buf, xsize, 24, 4, tc, title);
 	for (int y = 0; y < 14; y++) {
 		for (int x = 0; x < 16; x++) {
@@ -193,6 +185,19 @@ void make_window8(char * buf, int xsize,int ysize,char *title, int act){
 		}
 	}
 	return;
+}
+
+void make_window8(char *buf, int xsize, int ysize, char *title, int  act){
+    boxfill8(buf, xsize, COL8_GREY, 0,         0,         xsize - 1, 0        );
+    boxfill8(buf, xsize, COL8_WHITE, 1,         1,         xsize - 2, 1        );
+    boxfill8(buf, xsize, COL8_GREY, 0,         0,         0,         ysize - 1);
+    boxfill8(buf, xsize, COL8_WHITE, 1,         1,         1,         ysize - 2);
+    boxfill8(buf, xsize, COL8_D_GREY, xsize - 2, 1,         xsize - 2, ysize - 2);
+    boxfill8(buf, xsize, COL8_BLACK, xsize - 1, 0,         xsize - 1, ysize - 1);
+    boxfill8(buf, xsize, COL8_GREY, 2,         2,         xsize - 3, ysize - 3);
+    boxfill8(buf, xsize, COL8_D_GREY, 1,         ysize - 2, xsize - 2, ysize - 2);
+    boxfill8(buf, xsize, COL8_BLACK, 0,         ysize - 1, xsize - 1, ysize - 1);
+    make_wtitle8(buf, xsize, title, act);
 }
 
 void print_refreshable_font(struct LAYER *lay,int x,int y, int color, int background, char * s){

@@ -2,3 +2,4 @@
 *.o
 *.tmp
 ./tmp/
+.ycm_extra_conf.pyc

@@ -108,6 +108,7 @@ void bootmain(void) {
     /* main主循环部分变量初始化 */
     int kflag,mflag,tflag;                                                                //初始化键盘鼠标中断相关变量
     int x = 8;
+    int Key_to = 0;
 
     /* task_console */
     struct TASK *task_cons;
@@ -147,16 +148,39 @@ void bootmain(void) {
                 sti();
                 sprintf(s ,"%02X", i );
                 print_refreshable_font(lay_back,0,25,COL8_WHITE,COL8_LD_BLUE,s);
-                if(0 <= i && i <= 511-256 && i < 0x54){
-                    if(keytable[i] != 0 && x < 144){
-                        s[0] = keytable[i];
-                        s[1] = '\0';
-                        print_refreshable_font(lay_win, x, 28, COL8_BLACK, COL8_WHITE, s);
-                        x += 8;
+                if(0 <= i && i <= 511-256 && i < 0x54 && keytable[i] != 0){
+                    if(Key_to == 0){
+                        if(x < 144){
+                            s[0] = keytable[i];
+                            s[1] = '\0';
+                            print_refreshable_font(lay_win, x, 28, COL8_BLACK, COL8_WHITE, s);
+                            x += 8;
+                        }
+                    }else{
+                        fifo8_put(&task_cons->kfifo, keytable[i]);
                     }
-                    if( i == 0x0e && x > 8 ){
-                        print_refreshable_font(lay_win, x, 28, COL8_BLACK, COL8_WHITE, " ");
-                        x -= 8;
+                    if( i == 0x0e){
+                        if(Key_to == 0){
+                            if(x > 8){
+                                print_refreshable_font(lay_win, x, 28, COL8_BLACK, COL8_WHITE, " ");
+                                x -= 8;
+                            }
+                        }else{
+                             fifo8_put(&task_cons->kfifo, 8); //8在ASCII中代表backspace
+                        }
+                    }
+                    if( i == 0x0f ){
+                        if( Key_to == 0 ){
+                             Key_to = 1;
+                             make_wtitle8(buf_win, lay_win->bxsize, "TASK_A", 0);
+                             make_wtitle8(buf_task_cons, task_cons_lay->bxsize, "CONSOLE", 1);
+                        }else{
+                            Key_to = 0;
+                            make_wtitle8(buf_win, lay_win->bxsize, "TASK_A", 1);
+                             make_wtitle8(buf_task_cons, task_cons_lay->bxsize, "CONSOLE", 0);
+                        }
+                        layer_refresh(lay_win, 0, 0, lay_win->bxsize, 21);
+                        layer_refresh(task_cons_lay, 0, 0, task_cons_lay->bxsize, 21);
                     }
                 }
              }
@@ -220,39 +244,59 @@ void bootmain(void) {
 }
 
 void task_cons_main(struct LAYER *layer){
-    struct FIFO8 fifo;
+    struct FIFO8 tfifo;
     struct TIMER *timer_put;
-    int i,fifobuf[128],color;
+    int i,tfifobuf[32],kfifobuf[128],color;
     char s[12];
     int x,y;
+    struct TASK *task = task_now();
 
-    fifo8_init(&fifo, 128, fifobuf);
+    fifo8_init(&tfifo, 32, tfifobuf);
+    fifo8_init(&task->kfifo, 128,kfifobuf);
     timer_put = timer_alloc();
-    timer_init(timer_put, &fifo, 1);
+    timer_init(timer_put, &tfifo, 1);
     timer_settime(timer_put, 50);
-    fifo8_taskwaker(&fifo,task_now());
+    fifo8_taskwaker(&tfifo,task);
 
     x = 8;
 
     while(1){
         cli();
-        if(fifo8_status(&fifo) == 0){
+        if(fifo8_status(&tfifo) == 0 && fifo8_status(&task->kfifo) == 0){
             sti();
             task_sleep(task_now());
-        }else
-        {
-            i = fifo8_get(&fifo);
+        }else{
+            i = fifo8_get(&tfifo);
             sti();
             if( i <= 1 ){
                 if(i == 1){
-                    timer_init(timer_put,&fifo,0);
+                    timer_init(timer_put,&tfifo,0);
                     color = COL8_WHITE;
                 }else{
-                    timer_init(timer_put,&fifo,1);
+                    timer_init(timer_put,&tfifo,1);
                     color = COL8_BLACK;
                 }
             }
             timer_settime(timer_put, 50);
+
+            cli();
+            i = fifo8_get(&task->kfifo);
+            sti();
+            if( 0 <= i && i <= 511 -256){
+                if(i == 8){
+                    if(x > 16){
+                        print_refreshable_font(layer, x, 28, COL8_BLACK, COL8_WHITE, " ");
+                        x  -= 8;
+                    }
+                }else{
+                    if( x < 240 ){
+                        s[0] = i;
+                        s[1] = '\0';
+                        print_refreshable_font(layer, x, 28, COL8_BLACK, COL8_WHITE, s);
+                        x += 8;
+                    }
+                }
+            }
             boxfill8(layer->buf, layer->bxsize, color, x, 28, x+7,43);
             layer_refresh(layer, 8, 28, x+7, 43);
         }

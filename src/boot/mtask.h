@@ -2,6 +2,7 @@
 #define MTASK_H_H
 
 #include "memory.h"
+#include "fifo.h"
 
 #define AR_TSS32		0x0089
 #define MAX_TASKS       1000
@@ -23,6 +24,7 @@ struct TASK{
     struct TASK *child;
     struct TASK *brother;
     struct TASK *father;
+    struct FIFO8 kfifo;
 };
 
 struct TASKCTRL{

@@ -16,15 +16,24 @@ struct LAYER *lay_back,*lay_mouse,*lay_win;        //定义鼠标层和背景层
 struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR; //内存管理块的内存位置
 
 void bootmain(void) {
-    static char keytable[0x54] = {
+    static char keytable0[0x54] = {
          0,   0,   '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 0,   0,
-        'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '[', ']', 0,   0,   'A', 'S',
-        'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', '\'', 0,   0,   '\\', 'Z', 'X', 'C', 'V',
-        'B', 'N', 'M', ',', '.', '/', 0,   '*', 0,   ' ', 0,   0,   0,   0,   0,   0,
+        'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'O', 'P', '[', ']', 0,   0,   'a', 's',
+        'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', '\'', 0,   0,   '\\', 'z', 'x', 'c', 'v',
+        'b', 'n', 'm', ',', '.', '/', 0,   '*', 0,   ' ', 0,   0,   0,   0,   0,   0,
          0,   0,   0,   0,   0,   0,   0,   '7', '8', '9', '-', '4', '5', '6', '+', '1',
         '2', '3', '0', '.'
     };
-
+    static char keytable1[0x80] = {
+        0,   0,   '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '+', 0,   0,
+        'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '{', '}', 0,   0,   'A', 'S',
+        'D', 'F', 'G', 'H', 'J', 'K', 'L', ':', '"', 0,   0,   '|', 'Z', 'X', 'C', 'V',
+        'B', 'N', 'M', '<', '>', '?', 0,   '*', 0,   ' ', 0,   0,   0,   0,   0,   0,
+        0,   0,   0,   0,   0,   0,   0,   '7', '8', '9', '-', '4', '5', '6', '+', '1',
+        '2', '3', '0', '.', 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+        0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+        0,   0,   0,   '_', 0,   0,   0,   0,   0,   0,   0,   0,   0,   '|', 0,   0
+    };
     struct BOOTINFO *binfo;                        //从内存中找到在IPL中保存的图形参数
     binfo = (struct BOOTINFO *) 0x0ff0;
     char s[40];                                    //文字输出缓存，（在栈中）
@@ -109,6 +118,7 @@ void bootmain(void) {
     int kflag,mflag,tflag;                                                                //初始化键盘鼠标中断相关变量
     int x = 8;
     int Key_to = 0;
+    int Key_shift = 0;
 
     /* task_console */
     struct TASK *task_cons;
@@ -149,16 +159,24 @@ void bootmain(void) {
                 sprintf(s ,"%02X", i );
                 print_refreshable_font(lay_back,0,25,COL8_WHITE,COL8_LD_BLUE,s);
                 if(0 <= i && i <= 511-256){
-                    if(0x54 > i && keytable[i] != 0){
+                    if( i < 0x80){
+                        if(Key_shift == 0){
+                            s[0] = keytable0[i];
+                        }else{
+                            s[0] = keytable1[i];
+                        }
+                    }else{
+                        s[0] =  0;
+                    }
+                    if(s[0] != 0){
                         if(Key_to == 0){
                             if(x < 144){
-                                s[0] = keytable[i];
                                 s[1] = '\0';
                                 print_refreshable_font(lay_win, x, 28, COL8_BLACK, COL8_WHITE, s);
                                 x += 8;
                             }
                         }else{
-                            fifo8_put(&task_cons->kfifo, keytable[i]);
+                            fifo8_put(&task_cons->kfifo, s[0]);
                         }
                     }
                     if( i == 0x0e){
@@ -184,6 +202,10 @@ void bootmain(void) {
                         layer_refresh(lay_win, 0, 0, lay_win->bxsize, 21);
                         layer_refresh(task_cons_lay, 0, 0, task_cons_lay->bxsize, 21);
                     }
+                    if( i == 0x2a || i == 0x36)
+                        Key_shift = 1;
+                    if( i == 0xaa || i == 0xb6)
+                        Key_shift = 0;
                 }
              }
             if(mflag)                                                            //鼠标部分

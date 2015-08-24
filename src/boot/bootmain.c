@@ -148,16 +148,18 @@ void bootmain(void) {
                 sti();
                 sprintf(s ,"%02X", i );
                 print_refreshable_font(lay_back,0,25,COL8_WHITE,COL8_LD_BLUE,s);
-                if(0 <= i && i <= 511-256 && i < 0x54 && keytable[i] != 0){
-                    if(Key_to == 0){
-                        if(x < 144){
-                            s[0] = keytable[i];
-                            s[1] = '\0';
-                            print_refreshable_font(lay_win, x, 28, COL8_BLACK, COL8_WHITE, s);
-                            x += 8;
+                if(0 <= i && i <= 511-256){
+                    if(0x54 > i && keytable[i] != 0){
+                        if(Key_to == 0){
+                            if(x < 144){
+                                s[0] = keytable[i];
+                                s[1] = '\0';
+                                print_refreshable_font(lay_win, x, 28, COL8_BLACK, COL8_WHITE, s);
+                                x += 8;
+                            }
+                        }else{
+                            fifo8_put(&task_cons->kfifo, keytable[i]);
                         }
-                    }else{
-                        fifo8_put(&task_cons->kfifo, keytable[i]);
                     }
                     if( i == 0x0e){
                         if(Key_to == 0){
@@ -211,8 +213,14 @@ void bootmain(void) {
                     print_refreshable_font(lay_back,32,55,COL8_WHITE,COL8_LD_BLUE,s);
                     layer_slide(lay_mouse,mx,my);                          //偏移鼠标层以移动光标
 
+                    struct LAYER *mlayer;
+                    if(Key_to == 0)
+                        mlayer = lay_win;
+                    else
+                        mlayer = task_cons_lay;
+
                     if((mdec.btn & 0x01) != 0){
-                        layer_slide(lay_win,mx - 80,my - 8);
+                        layer_slide(mlayer,mx - 80,my - 8);
                     }
                 }
             }
@@ -257,6 +265,7 @@ void task_cons_main(struct LAYER *layer){
     timer_init(timer_put, &tfifo, 1);
     timer_settime(timer_put, 50);
     fifo8_taskwaker(&tfifo,task);
+    fifo8_taskwaker(&task->kfifo,task);
 
     x = 8;
 
@@ -285,14 +294,14 @@ void task_cons_main(struct LAYER *layer){
             if( 0 <= i && i <= 511 -256){
                 if(i == 8){
                     if(x > 16){
-                        print_refreshable_font(layer, x, 28, COL8_BLACK, COL8_WHITE, " ");
+                        print_refreshable_font(layer, x, 28, COL8_BLACK, COL8_BLACK, " ");
                         x  -= 8;
                     }
                 }else{
                     if( x < 240 ){
                         s[0] = i;
                         s[1] = '\0';
-                        print_refreshable_font(layer, x, 28, COL8_BLACK, COL8_WHITE, s);
+                        print_refreshable_font(layer, x, 28, COL8_WHITE, COL8_BLACK, s);
                         x += 8;
                     }
                 }

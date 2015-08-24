@@ -48,6 +48,3 @@ int fifo8_status(struct FIFO8 *fifo){
     return (fifo->tail - fifo->head + fifo->size ) % fifo->size;
 }
 
-void fifo8_taskwaker(struct FIFO8 *fifo,struct TASK *task){
-     fifo->task = task;
-}

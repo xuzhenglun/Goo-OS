@@ -47,5 +47,6 @@ void preorder(struct TASK *root,struct TASKCTRL *taskctrl);
 void destory_ts(struct TASK *root);
 void task_set_priority(struct TASK *task,int priority);
 struct TASK *task_now(void);
+void fifo8_taskwaker(struct FIFO8 *fifo,struct TASK *task);
 
 #endif

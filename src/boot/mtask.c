@@ -153,3 +153,7 @@ void task_set_priority(struct TASK *task,int priority){
 struct TASK *task_now(void){
     return taskctrl->now;
 }
+
+void fifo8_taskwaker(struct FIFO8 *fifo,struct TASK *task){
+     fifo->task = task;
+}

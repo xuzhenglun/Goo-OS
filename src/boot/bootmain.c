@@ -114,6 +114,7 @@ void bootmain(void) {
     /* main主循环部分变量初始化 */
     int kflag,mflag,tflag;                                                                //初始化键盘鼠标中断相关变量
     int x = 8;
+    int color;
 
     /* task_console */
     struct TASK *task_cons;
@@ -130,13 +131,13 @@ void bootmain(void) {
     task_set_priority(task_cons,2);
     layer_slide(task_cons_lay, 178,  56);
     layer_updown(task_cons_lay, 1);
-    
+
     for(;;){
         unsigned long overflow = -0x100;
         if(timerctrl.count >= overflow){
             timer_refresh();
             }//时间计数溢出，重新刷新时间。32位long为4字节，大约一年溢出。若编译器将其处理成8字节，我觉得没必要刷新了。
-            
+
         if(fifo8_status(&keycmd) && Keycmd_wait == 0xff){
              Keycmd_wait = fifo8_get(&keycmd);
              io_out8(PORT_KEYDAT, KEYCMD_LED);
@@ -165,7 +166,7 @@ void bootmain(void) {
                     if( i < 0x80){
                         if(Key_shift == 0){
                             s[0] = keytable0[i];
-                            if((Key_leds & (1 << 3) ) != 0 && s[0] >= 'a' && s[0] <= 'z')
+                            if((Key_leds & (1 << 2) ) != 0 && s[0] >= 'a' && s[0] <= 'z')
                                 s[0] -= 'a' -'A';
                         }else{
                             s[0] = keytable1[i];
@@ -196,13 +197,16 @@ void bootmain(void) {
                     }
                     if( i == 0x0f ){
                         if( Key_to == 0 ){
-                             Key_to = 1;
-                             make_wtitle8(buf_win, lay_win->bxsize, "TASK_A", 0);
-                             make_wtitle8(buf_task_cons, task_cons_lay->bxsize, "CONSOLE", 1);
+                            Key_to = 1;
+                            make_wtitle8(buf_win, lay_win->bxsize, "TASK_A", 0);
+                            make_wtitle8(buf_task_cons, task_cons_lay->bxsize, "CONSOLE", 1);
+                            color = -1;
+                            boxfill8(lay_win->buf, lay_win->bxsize, COL8_WHITE, x, 28, x + 6, 42);
                         }else{
                             Key_to = 0;
                             make_wtitle8(buf_win, lay_win->bxsize, "TASK_A", 1);
-                             make_wtitle8(buf_task_cons, task_cons_lay->bxsize, "CONSOLE", 0);
+                            make_wtitle8(buf_task_cons, task_cons_lay->bxsize, "CONSOLE", 0);
+                            color = COL8_BLACK;
                         }
                         layer_refresh(lay_win, 0, 0, lay_win->bxsize, 21);
                         layer_refresh(task_cons_lay, 0, 0, task_cons_lay->bxsize, 21);
@@ -222,7 +226,7 @@ void bootmain(void) {
                     if( i == 0x46 ){
                         Key_leds ^= 1;
                         fifo8_put(&keycmd, Key_leds);
-                    } 
+                    }
                     unsigned char fuck = Keycmd_wait;
                     if( i == 0xfa ){
                         Keycmd_wait = 0xff;
@@ -231,6 +235,10 @@ void bootmain(void) {
                          wait_KBC_sendready();
                          io_out8(PORT_KEYDAT, Keycmd_wait);
                     }
+                }
+                if(color >= 0){
+                    boxfill8(lay_win->buf, lay_win->bxsize, color, x, 28, x + 6, 42);
+                    layer_refresh(lay_win, x, 28, x + 6, 42);
                 }
             }
             if(mflag)                                                            //鼠标部分
@@ -285,13 +293,20 @@ void bootmain(void) {
                 if( i <= 1){
                     if (i == 1) {
                         timer_init(timer3, &timerfifo, 0);
-                        boxfill8(buf_win, lay_win->bxsize, COL8_BLACK, x, 28, x+6, 28+14);
+                        if(color >= 0){
+                             color = COL8_BLACK;
+                        }
                     }else {
                         timer_init(timer3, &timerfifo, 1);
-                        boxfill8(buf_win, lay_win->bxsize, COL8_WHITE, x, 28, x+6, 28+14);
+                        if(color >= 0){
+                             color = COL8_WHITE;
+                        }
                     }
-                    layer_refresh(lay_win, x, 28, x+6, 28+14);
                     timer_settime(timer3, 50);
+                    if(color >= 0){
+                    boxfill8(buf_win, lay_win->bxsize, color, x, 28, x+6, 28+14);
+                    layer_refresh(lay_win, x, 28, x+6, 28+14);
+                    }
                 }
             }
         }

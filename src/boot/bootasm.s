@@ -78,7 +78,7 @@ keystatus:
 
     MOV AH,0x02
     INT 0x16
-    MOV [LEDS],AL
+    MOV [LEDS],AX
 
     ; 下面代码来自于XV6
     cli

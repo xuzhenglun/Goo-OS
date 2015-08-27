@@ -1,4 +1,4 @@
-OBJS_BOOTPACK = bootasm.o bootmain.o basic.o font.o sprintf.o vsprintf.o strtoul0.o strlen.o dsctbl.o graph.o int.o int_asm.o fifo.o memory.o layer.o timer.o mtask.o
+OBJS_BOOTPACK = bootasm.o bootmain.o basic.o font.o sprintf.o vsprintf.o strtoul0.o strlen.o dsctbl.o graph.o int.o int_asm.o fifo.o memory.o layer.o timer.o mtask.o keyboard.o
 
 INCPATH  = ./../
 
@@ -17,7 +17,7 @@ goo.img : os.img bootblock.bin
 	mv os.img goo.img
 
 black.bin : ./src/app/black.s
-	$(NASK) ./src/app/black.s -o black.bin
+	$(NASM) ./src/app/black.s -o black.bin
 
 IPL.bin : ./src/boot/IPL.s
 	$(NASM) ./src/boot/IPL.s -o IPL.bin

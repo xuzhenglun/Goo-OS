@@ -10,30 +10,13 @@
 #include "layer.h"
 #include "timer.h"
 #include "mtask.h"
+#include "keyboard.h"
 
 struct LAYER_CTL * layctl;                     //初始化定义层控制体
 struct LAYER *lay_back,*lay_mouse,*lay_win;        //定义鼠标层和背景层
 struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR; //内存管理块的内存位置
 
 void bootmain(void) {
-    static char keytable0[0x54] = {
-         0,   0,   '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 0,   0,
-        'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'O', 'P', '[', ']', 0,   0,   'a', 's',
-        'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', '\'', 0,   0,   '\\', 'z', 'x', 'c', 'v',
-        'b', 'n', 'm', ',', '.', '/', 0,   '*', 0,   ' ', 0,   0,   0,   0,   0,   0,
-         0,   0,   0,   0,   0,   0,   0,   '7', '8', '9', '-', '4', '5', '6', '+', '1',
-        '2', '3', '0', '.'
-    };
-    static char keytable1[0x80] = {
-        0,   0,   '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '+', 0,   0,
-        'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '{', '}', 0,   0,   'A', 'S',
-        'D', 'F', 'G', 'H', 'J', 'K', 'L', ':', '"', 0,   0,   '|', 'Z', 'X', 'C', 'V',
-        'B', 'N', 'M', '<', '>', '?', 0,   '*', 0,   ' ', 0,   0,   0,   0,   0,   0,
-        0,   0,   0,   0,   0,   0,   0,   '7', '8', '9', '-', '4', '5', '6', '+', '1',
-        '2', '3', '0', '.', 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-        0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-        0,   0,   0,   '_', 0,   0,   0,   0,   0,   0,   0,   0,   0,   '|', 0,   0
-    };
     struct BOOTINFO *binfo;                        //从内存中找到在IPL中保存的图形参数
     binfo = (struct BOOTINFO *) 0x0ff0;
     char s[40];                                    //文字输出缓存，（在栈中）
@@ -45,7 +28,7 @@ void bootmain(void) {
 
 
     char *buf_back,*buf_mouse,*buf_win;
-    char keybuf[32],mousebuf[128],timerbuf[32];                //鼠标和键盘中断缓存，（在栈中）
+    unsigned char keybuf[32],mousebuf[128],timerbuf[32];                //鼠标和键盘中断缓存，（在栈中）
     struct FIFO8 timerfifo;
     fifo8_init(&keyfifo,   32,  keybuf  );
     fifo8_init(&mousefifo, 128, mousebuf);
@@ -114,11 +97,23 @@ void bootmain(void) {
     init_keyboard();
     enable_mouse(&mdec);
 
+    /*键盘*/
+    extern char keytable0[0x80];
+    extern char keytable1[0x80];
+
+    int Key_to = 0;
+    int Key_shift = 0;
+    int Key_leds = (binfo->leds >> 4) & 0x0111;
+    unsigned char Keycmd_wait = 0xff;
+    struct FIFO8 keycmd;
+    unsigned char keycmd_buf[32];
+    fifo8_init(&keycmd, 32, keycmd_buf);
+    fifo8_put(&keycmd, KEYCMD_LED);
+    fifo8_put(&keycmd, Key_leds);
+
     /* main主循环部分变量初始化 */
     int kflag,mflag,tflag;                                                                //初始化键盘鼠标中断相关变量
     int x = 8;
-    int Key_to = 0;
-    int Key_shift = 0;
 
     /* task_console */
     struct TASK *task_cons;
@@ -135,12 +130,20 @@ void bootmain(void) {
     task_set_priority(task_cons,2);
     layer_slide(task_cons_lay, 178,  56);
     layer_updown(task_cons_lay, 1);
-
+    
     for(;;){
         unsigned long overflow = -0x100;
         if(timerctrl.count >= overflow){
             timer_refresh();
             }//时间计数溢出，重新刷新时间。32位long为4字节，大约一年溢出。若编译器将其处理成8字节，我觉得没必要刷新了。
+            
+        if(fifo8_status(&keycmd) && Keycmd_wait == 0xff){
+             Keycmd_wait = fifo8_get(&keycmd);
+             io_out8(PORT_KEYDAT, KEYCMD_LED);
+             wait_KBC_sendready();
+             io_out8(PORT_KEYDAT, Keycmd_wait);
+        }
+
         cli();
         kflag = fifo8_status(&keyfifo);
         mflag = fifo8_status(&mousefifo);
@@ -158,10 +161,12 @@ void bootmain(void) {
                 sti();
                 sprintf(s ,"%02X", i );
                 print_refreshable_font(lay_back,0,25,COL8_WHITE,COL8_LD_BLUE,s);
-                if(0 <= i && i <= 511-256){
+                if(0 <= i && i <= 0xFF){
                     if( i < 0x80){
                         if(Key_shift == 0){
                             s[0] = keytable0[i];
+                            if((Key_leds & (1 << 3) ) != 0 && s[0] >= 'a' && s[0] <= 'z')
+                                s[0] -= 'a' -'A';
                         }else{
                             s[0] = keytable1[i];
                         }
@@ -170,7 +175,7 @@ void bootmain(void) {
                     }
                     if(s[0] != 0){
                         if(Key_to == 0){
-                            if(x < 144){
+                            if(x < 0x90){
                                 s[1] = '\0';
                                 print_refreshable_font(lay_win, x, 28, COL8_BLACK, COL8_WHITE, s);
                                 x += 8;
@@ -206,8 +211,28 @@ void bootmain(void) {
                         Key_shift = 1;
                     if( i == 0xaa || i == 0xb6)
                         Key_shift = 0;
+                    if( i == 0x3a ){
+                        Key_leds ^= 1 << 2;
+                        fifo8_put(&keycmd, Key_leds);
+                   }
+                    if( i == 0x45 ){
+                        Key_leds ^= 1 << 1;
+                        fifo8_put(&keycmd, Key_leds);
+                    }
+                    if( i == 0x46 ){
+                        Key_leds ^= 1;
+                        fifo8_put(&keycmd, Key_leds);
+                    } 
+                    unsigned char fuck = Keycmd_wait;
+                    if( i == 0xfa ){
+                        Keycmd_wait = 0xff;
+                    }
+                    if( i == 0xfe ){
+                         wait_KBC_sendready();
+                         io_out8(PORT_KEYDAT, Keycmd_wait);
+                    }
                 }
-             }
+            }
             if(mflag)                                                            //鼠标部分
             {
                 cli();
@@ -276,7 +301,8 @@ void bootmain(void) {
 void task_cons_main(struct LAYER *layer){
     struct FIFO8 tfifo;
     struct TIMER *timer_put;
-    int i,tfifobuf[32],kfifobuf[128],color;
+    int i,color;
+    unsigned char tfifobuf[32],kfifobuf[128];
     char s[12];
     int x,y;
     struct TASK *task = task_now();

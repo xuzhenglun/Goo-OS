@@ -53,7 +53,7 @@ void bootmain(void) {
     layctl = layer_ctl_init(memman,binfo->vram,binfo->scrnx,binfo->scrny);  //初始化层控制块
 
     struct TASK * INIT = task_init(memman);
-    task_set_priority(INIT,10);
+    task_set_priority(INIT,6);
     fifo8_taskwaker(&mousefifo,INIT);
 
     /* 背景层 */
@@ -120,7 +120,7 @@ void bootmain(void) {
     struct TASK *task_cons;
     unsigned char *buf_task_cons;
     struct LAYER *task_cons_lay;
-    task_cons = task_alloc(1, (int)&task_cons_main, 1, 64);
+    task_cons = task_alloc(2, (int)&task_cons_main, 1, 64);
     task_cons_lay = layer_alloc(layctl);
     buf_task_cons = (unsigned char *) mem_alloc_4k(memman, 256 * 165);
     layer_setbuf(task_cons_lay, buf_task_cons, 256,165, -1);
@@ -128,7 +128,6 @@ void bootmain(void) {
     make_textbox(task_cons_lay,8,28,240,128,COL8_BLACK);
     *((int *) (task_cons->tss.esp + 4)) = (int) task_cons_lay;
     task_run(task_cons);
-    task_set_priority(task_cons,2);
     layer_slide(task_cons_lay, 178,  56);
     layer_updown(task_cons_lay, 1);
 
@@ -146,8 +145,8 @@ void bootmain(void) {
         }
 
         if(color < 0){
-            boxfill8(lay_win->buf, lay_win->bxsize, COL8_WHITE, x, 28, x + 6, 42);
-            layer_refresh(lay_win, x, 28, x + 6, 42);
+            boxfill8(lay_win->buf, lay_win->bxsize, COL8_WHITE, x, 28, x + 8, 44);
+            layer_refresh(lay_win, x, 28, x + 8, 44);
         }
 
         cli();
@@ -206,7 +205,7 @@ void bootmain(void) {
                             make_wtitle8(buf_win, lay_win->bxsize, "TASK_A", 0);
                             make_wtitle8(buf_task_cons, task_cons_lay->bxsize, "CONSOLE", 1);
                             color = -1;
-                            boxfill8(lay_win->buf, lay_win->bxsize, COL8_WHITE, x, 28, x + 6, 42);
+                            boxfill8(lay_win->buf, lay_win->bxsize, COL8_WHITE, x, 28, x + 8, 44);
                             task_cons->now = 1;
                         }else{
                             Key_to = 0;
@@ -235,13 +234,15 @@ void bootmain(void) {
                         Key_leds ^= 1;
                         fifo8_put(&keycmd, Key_leds);
                     }
-                    unsigned char fuck = Keycmd_wait;
                     if( i == 0xfa ){
                         Keycmd_wait = 0xff;
                     }
                     if( i == 0xfe ){
-                         wait_KBC_sendready();
-                         io_out8(PORT_KEYDAT, Keycmd_wait);
+                        wait_KBC_sendready();
+                        io_out8(PORT_KEYDAT, Keycmd_wait);
+                    }
+                    if( i == 0x1c && Key_to != 0 ){
+                        fifo8_put(&task_cons->kfifo, 10);
                     }
                 }
             }
@@ -308,8 +309,8 @@ void bootmain(void) {
                     }
                     timer_settime(timer3, 50);
                     if(color >= 0){
-                    boxfill8(buf_win, lay_win->bxsize, color, x, 28, x+6, 28+14);
-                    layer_refresh(lay_win, x, 28, x+6, 28+14);
+                    boxfill8(buf_win, lay_win->bxsize, color, x, 28, x + 8, 28 + 16);
+                    layer_refresh(lay_win, x, 28, x + 8, 28 + 16);
                     }
                 }
             }
@@ -334,7 +335,11 @@ void task_cons_main(struct LAYER *layer){
     fifo8_taskwaker(&tfifo,task);
     fifo8_taskwaker(&task->kfifo,task);
 
-    x = 8;
+    x = 8 + 8;
+    y = 28;
+
+    print_refreshable_font(layer,8,28,COL8_WHITE,COL8_BLACK,">");
+    layer_refresh(layer, 8, 28, 8 + 8, 28 + 16);
 
     while(1){
         cli();
@@ -358,28 +363,51 @@ void task_cons_main(struct LAYER *layer){
             cli();
             i = fifo8_get(&task->kfifo);
             sti();
-            if( 0 <= i && i <= 511 -256){
-                if(i == 8){
-                    if(x > 16){
-                        print_refreshable_font(layer, x, 28, COL8_BLACK, COL8_BLACK, " ");
-                        x  -= 8;
-                    }
-                }else{
-                    if( x < 240 ){
-                        s[0] = i;
-                        s[1] = '\0';
-                        print_refreshable_font(layer, x, 28, COL8_WHITE, COL8_BLACK, s);
-                        x += 8;
-                    }
+            if( 0 <= i && i <= 0xff){
+                switch(i){
+                    case 8:
+                        if(x > 16){
+                            print_refreshable_font(layer, x, y, COL8_BLACK, COL8_BLACK, " ");
+                            x  -= 8;
+                        }
+                        break;
+                    case 10:
+                        boxfill8(layer->buf, layer->bxsize, COL8_BLACK, x, y, x + 8, y + 16);
+                        if(y < 28 + 112){
+                            y += 16;
+                        }else{
+                            for(y = 28; y < 28 + 112; y++){
+                                for(x = 8; x < 8 + 240; x++){
+                                    layer->buf[x + y * layer->bxsize] = layer->buf[x + (y + 16) * layer->bxsize];
+                                }
+                            }
+                            for(y = 28 + 112; y < 28 + 128; y++){
+                                for(x = 8; x < 8 + 240; x++){
+                                    layer->buf[x + y * layer->bxsize] = COL8_BLACK;
+                                }
+                            }
+                            layer_refresh(layer, 8 , 28, 8 + 240, 28 + 128);
+                            y -= 16;
+                        }
+                        print_refreshable_font(layer, 8, y, COL8_WHITE, COL8_BLACK, ">");
+                        x = 16;
+                        break;
+                    default:
+                        if( x < 240 ){
+                            s[0] = i;
+                            s[1] = '\0';
+                            print_refreshable_font(layer, x, y, COL8_WHITE, COL8_BLACK, s);
+                            x += 8;
+                        }
                 }
             }
-            boxfill8(layer->buf, layer->bxsize, color, x, 28, x + 6, 42);
-            layer_refresh(layer, x, 28, x + 6, 42);
+            boxfill8(layer->buf, layer->bxsize, color, x, y, x + 8, y + 16);
+            layer_refresh(layer, x, y, x + 8, y + 16);
         }
         if(task->now == 0 && color != COL8_BLACK){
             color = COL8_BLACK;
-            boxfill8(layer->buf, layer->bxsize, COL8_BLACK, x, 28, x + 6, 42);
-            layer_refresh(layer, x, 28, x + 6, 42);
+            boxfill8(layer->buf, layer->bxsize, COL8_BLACK, x, y, x + 8, y + 16);
+            layer_refresh(layer, x, y, x + 8, y + 16);
             task->now = -1;
         }
     }

@@ -25,6 +25,7 @@ struct TASK{
     struct TASK *brother;
     struct TASK *father;
     struct FIFO8 kfifo;
+    char now;
 };
 
 struct TASKCTRL{

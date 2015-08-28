@@ -145,6 +145,11 @@ void bootmain(void) {
              io_out8(PORT_KEYDAT, Keycmd_wait);
         }
 
+        if(color < 0){
+            boxfill8(lay_win->buf, lay_win->bxsize, COL8_WHITE, x, 28, x + 6, 42);
+            layer_refresh(lay_win, x, 28, x + 6, 42);
+        }
+
         cli();
         kflag = fifo8_status(&keyfifo);
         mflag = fifo8_status(&mousefifo);
@@ -202,11 +207,14 @@ void bootmain(void) {
                             make_wtitle8(buf_task_cons, task_cons_lay->bxsize, "CONSOLE", 1);
                             color = -1;
                             boxfill8(lay_win->buf, lay_win->bxsize, COL8_WHITE, x, 28, x + 6, 42);
+                            task_cons->now = 1;
                         }else{
                             Key_to = 0;
                             make_wtitle8(buf_win, lay_win->bxsize, "TASK_A", 1);
                             make_wtitle8(buf_task_cons, task_cons_lay->bxsize, "CONSOLE", 0);
                             color = COL8_BLACK;
+                            task_cons->now = 0;
+                            task_wake(task_cons);
                         }
                         layer_refresh(lay_win, 0, 0, lay_win->bxsize, 21);
                         layer_refresh(task_cons_lay, 0, 0, task_cons_lay->bxsize, 21);
@@ -235,10 +243,6 @@ void bootmain(void) {
                          wait_KBC_sendready();
                          io_out8(PORT_KEYDAT, Keycmd_wait);
                     }
-                }
-                if(color >= 0){
-                    boxfill8(lay_win->buf, lay_win->bxsize, color, x, 28, x + 6, 42);
-                    layer_refresh(lay_win, x, 28, x + 6, 42);
                 }
             }
             if(mflag)                                                            //鼠标部分
@@ -340,7 +344,7 @@ void task_cons_main(struct LAYER *layer){
         }else{
             i = fifo8_get(&tfifo);
             sti();
-            if( i <= 1 ){
+            if( i <= 1 && task->now == 1){
                 if(i == 1){
                     timer_init(timer_put,&tfifo,0);
                     color = COL8_WHITE;
@@ -369,8 +373,14 @@ void task_cons_main(struct LAYER *layer){
                     }
                 }
             }
-            boxfill8(layer->buf, layer->bxsize, color, x, 28, x+7,43);
-            layer_refresh(layer, 8, 28, x+7, 43);
+            boxfill8(layer->buf, layer->bxsize, color, x, 28, x + 6, 42);
+            layer_refresh(layer, x, 28, x + 6, 42);
+        }
+        if(task->now == 0 && color != COL8_BLACK){
+            color = COL8_BLACK;
+            boxfill8(layer->buf, layer->bxsize, COL8_BLACK, x, 28, x + 6, 42);
+            layer_refresh(layer, x, 28, x + 6, 42);
+            task->now = -1;
         }
     }
 }

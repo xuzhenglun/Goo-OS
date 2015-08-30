@@ -5,6 +5,7 @@
 #include "dsctbl.h"
 #include "int.h"
 #include "../golibc/stdio.h"
+#include "../golibc/string.h"
 #include "basic.h"
 #include "memory.h"
 #include "layer.h"
@@ -61,10 +62,11 @@ void bootmain(void) {
     buf_back = (unsigned char *) mem_alloc_4k(memman,binfo->scrnx * binfo->scrny);
     layer_setbuf(lay_back,buf_back,binfo->scrnx,binfo->scrny,-1);             //设定背景层
     init_screen8(buf_back, binfo->scrnx,binfo->scrny);                         //画一下桌面
-    sprintf(s,"| MEMORY:%dMB|FREE:%dKB",memtotal /(1024*1024),mem_total(memman)/1024); //输出内存消息
-    print_fonts(buf_back ,binfo->scrnx,100,8,COL8_WHITE,s);
-    sprintf(s,"%d * %d ",binfo->scrnx,binfo->scrny);                                    //输出屏幕分辨率
-    print_fonts(buf_back ,binfo->scrnx,8,8,COL8_WHITE,s);
+/*    sprintf(s,"| MEMORY:%dMB|FREE:%dKB",memtotal /(1024*1024),mem_total(memman)/1024); //输出内存消息*/
+    /*print_fonts(buf_back ,binfo->scrnx,100,8,COL8_WHITE,s);*/
+
+    /*sprintf(s,"%d * %d ",binfo->scrnx,binfo->scrny);                                   // 输出屏幕分辨率*/
+    /*print_fonts(buf_back ,binfo->scrnx,8,8,COL8_WHITE,s);*/
     layer_slide(lay_back,0,0);                                                //把背景层偏移搭到（0，0）
     layer_updown(lay_back,0);                                                //设定背景层为0层
 
@@ -122,10 +124,12 @@ void bootmain(void) {
     struct LAYER *task_cons_lay;
     task_cons = task_alloc(2, (int)&task_cons_main, 1, 64);
     task_cons_lay = layer_alloc(layctl);
-    buf_task_cons = (unsigned char *) mem_alloc_4k(memman, 256 * 165);
-    layer_setbuf(task_cons_lay, buf_task_cons, 256,165, -1);
-    make_window8(buf_task_cons, 256,165, "Console", 0);
-    make_textbox(task_cons_lay,8,28,240,128,COL8_BLACK);
+    buf_task_cons = (unsigned char *) mem_alloc_4k(memman, CON_X * CON_Y);
+    layer_setbuf(task_cons_lay, buf_task_cons, CON_X, CON_Y, -1);
+/*    make_window8(buf_task_cons, 256,165, "Console", 0);*/
+    /*make_textbox(task_cons_lay,8,28,240,128,COL8_BLACK);*/
+    make_window8(buf_task_cons, CON_X,CON_Y, "Console", 0);
+    make_textbox(task_cons_lay, 8, 28, CON_TEXT_X, CON_TEXT_Y, COL8_BLACK);
     *((int *) (task_cons->tss.esp + 4)) = (int) task_cons_lay;
     task_run(task_cons);
     layer_slide(task_cons_lay, 178,  56);
@@ -164,8 +168,8 @@ void bootmain(void) {
                 cli();
                 unsigned char i = fifo8_get(&keyfifo);
                 sti();
-                sprintf(s ,"%02X", i );
-                print_refreshable_font(lay_back,0,25,COL8_WHITE,COL8_LD_BLUE,s);
+/*                sprintf(s ,"%02X", i );*/
+                /*print_refreshable_font(lay_back,0,25,COL8_WHITE,COL8_LD_BLUE,s);*/
                 if(0 <= i && i <= 0xFF){
                     if( i < 0x80){
                         if(Key_shift == 0){
@@ -252,16 +256,16 @@ void bootmain(void) {
                 unsigned char i = fifo8_get(&mousefifo);
                 sti();
                 if(mouse_decode(&mdec, i) != 0){                                //解码鼠标中断带来的数据
-                    sprintf(s ,"%02X %02X %02X", mdec.buf[0],mdec.buf[1],mdec.buf[2]);
-                    print_refreshable_font(lay_back,32,24,COL8_WHITE,COL8_LD_BLUE,s);
-                    sprintf(s, "[lcr,%4d,%4d]",mdec.x,mdec.y);
-                    if((mdec.btn & 0x01) != 0)
-                        s[1] = 'L';
-                    if((mdec.btn & 0x02) != 0)
-                        s[3] = 'R';
-                    if((mdec.btn & 0x04) != 0)
-                        s[2] = 'C';
-                    print_refreshable_font(lay_back,32,40,COL8_WHITE,COL8_LD_BLUE,s);
+                    /*sprintf(s ,"%02X %02X %02X", mdec.buf[0],mdec.buf[1],mdec.buf[2]);*/
+                    /*print_refreshable_font(lay_back,32,24,COL8_WHITE,COL8_LD_BLUE,s);*/
+                    /*sprintf(s, "[lcr,%4d,%4d]",mdec.x,mdec.y);*/
+                    /*if((mdec.btn & 0x01) != 0)*/
+                        /*s[1] = 'L';*/
+                    /*if((mdec.btn & 0x02) != 0)*/
+                        /*s[3] = 'R';*/
+                    /*if((mdec.btn & 0x04) != 0)*/
+                        /*s[2] = 'C';*/
+                    /*print_refreshable_font(lay_back,32,40,COL8_WHITE,COL8_LD_BLUE,s);*/
 
                     mx += mdec.x;
                     my += mdec.y;
@@ -269,8 +273,8 @@ void bootmain(void) {
                     if(mx > binfo->scrnx - 1) mx = binfo->scrnx - 1;
                     if(my < 0) my = 0;
                     if(my > binfo->scrny - 1) my = binfo->scrny - 1;              //鼠标（X,Y）解码
-                    sprintf(s,"(%3d,%3d)",mx,my);
-                    print_refreshable_font(lay_back,32,55,COL8_WHITE,COL8_LD_BLUE,s);
+/*                    sprintf(s,"(%3d,%3d)",mx,my);*/
+                    /*print_refreshable_font(lay_back,32,55,COL8_WHITE,COL8_LD_BLUE,s);*/
                     layer_slide(lay_mouse,mx,my);                          //偏移鼠标层以移动光标
 
                     struct LAYER *mlayer;
@@ -288,13 +292,13 @@ void bootmain(void) {
                 cli();
                 unsigned char i = fifo8_get(&timerfifo);
                 sti();
-                if(i == 10){
-                    print_refreshable_font(lay_back,170,28,COL8_WHITE,COL8_LD_BLUE,"10[sec]");
-                }
-                if(i == 3){
-                    print_refreshable_font(lay_back,170,28,COL8_WHITE,COL8_LD_BLUE,"3[sec]");
-                    timer_settime(timer2, 300);
-                }
+/*                if(i == 10){*/
+                    /*print_refreshable_font(lay_back,170,28,COL8_WHITE,COL8_LD_BLUE,"10[sec]");*/
+                /*}*/
+                /*if(i == 3){*/
+                    /*print_refreshable_font(lay_back,170,28,COL8_WHITE,COL8_LD_BLUE,"3[sec]");*/
+                    /*timer_settime(timer2, 300);*/
+                /*}*/
                 if( i <= 1){
                     if (i == 1) {
                         timer_init(timer3, &timerfifo, 0);
@@ -323,9 +327,10 @@ void task_cons_main(struct LAYER *layer){
     struct TIMER *timer_put;
     int i,color;
     unsigned char tfifobuf[32],kfifobuf[128];
-    char s[12];
+    char s[12],cmdline[30];
     int x,y;
     struct TASK *task = task_now();
+    struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
 
     fifo8_init(&tfifo, 32, tfifobuf);
     fifo8_init(&task->kfifo, 128,kfifobuf);
@@ -373,29 +378,38 @@ void task_cons_main(struct LAYER *layer){
                         break;
                     case 10:
                         boxfill8(layer->buf, layer->bxsize, COL8_BLACK, x, y, x + 8, y + 16);
-                        if(y < 28 + 112){
-                            y += 16;
-                        }else{
-                            for(y = 28; y < 28 + 112; y++){
-                                for(x = 8; x < 8 + 240; x++){
-                                    layer->buf[x + y * layer->bxsize] = layer->buf[x + (y + 16) * layer->bxsize];
+                        cmdline[x / 8 - 2] = '\0';
+                        y = cons_newline(y, layer);
+                        if(!strcmp(cmdline,"mem")){
+                            int memtotal = memtest(0x00300000, 0xbfffffff); //总内存大小
+                            sprintf(s,"MEMORY:%dMB|FREE:%dKB",memtotal /(1024*1024),mem_total(memman)/1024);
+                            print_refreshable_font(layer, 8, y, COL8_WHITE, COL8_BLACK, s);
+                            y = cons_newline(y, layer);
+                            y = cons_newline(y, layer);
+                        }else if(!strcmp(cmdline,"clear")){
+                            for(int i = 28; i < 28 + CON_TEXT_Y; i++){
+                                for(int t = 8; t < 8 + CON_TEXT_X; t++){
+                                    layer->buf[t + i * layer->bxsize] = COL8_BLACK;
                                 }
                             }
-                            for(y = 28 + 112; y < 28 + 128; y++){
-                                for(x = 8; x < 8 + 240; x++){
-                                    layer->buf[x + y * layer->bxsize] = COL8_BLACK;
-                                }
-                            }
-                            layer_refresh(layer, 8 , 28, 8 + 240, 28 + 128);
-                            y -= 16;
+                            layer_refresh(layer, 8, 28, 8 + CON_TEXT_X, 28 + CON_TEXT_Y);
+                            y = 28;
+                        }else if(cmdline[0] != '\0'){
+                            sprintf(s,"No Such Command \"%s\".",cmdline);
+                            print_refreshable_font(layer, 8, y, COL8_WHITE, COL8_BLACK, s);
+                            y = cons_newline(y, layer);
+                            y = cons_newline(y, layer);
                         }
                         print_refreshable_font(layer, 8, y, COL8_WHITE, COL8_BLACK, ">");
                         x = 16;
                         break;
                     default:
-                        if( x < 240 ){
+                        if( x < CON_TEXT_X ){
                             s[0] = i;
                             s[1] = '\0';
+                            if(x / 8 - 2 < 30 - 1){  //边界检查，否则溢出崩溃
+                                cmdline[x / 8 - 2] = i;
+                            };
                             print_refreshable_font(layer, x, y, COL8_WHITE, COL8_BLACK, s);
                             x += 8;
                         }
@@ -411,4 +425,23 @@ void task_cons_main(struct LAYER *layer){
             task->now = -1;
         }
     }
+}
+
+int cons_newline(int cursor_y, struct LAYER *layer){
+    if(cursor_y <= 28 + CON_TEXT_Y - 16 * 2){
+        cursor_y += 16;
+    }else{
+        for(int y = 28; y < 28 + CON_TEXT_Y - 16; y++){
+            for(int x = 8; x < 8 + CON_TEXT_X; x++){
+                layer->buf[x + y * layer->bxsize] = layer->buf[x + (y + 16) * layer->bxsize];
+            }
+        }
+        for(int y = 28 + CON_TEXT_Y - 16; y < 28 + CON_TEXT_Y; y++){
+            for(int x = 8; x < 8 + CON_TEXT_X; x++){
+                layer->buf[x + y * layer->bxsize] = COL8_BLACK;
+            }
+        }
+        layer_refresh(layer, 8 , 28, 8 + CON_TEXT_X, 28 + CON_TEXT_Y);
+    }
+    return cursor_y;
 }

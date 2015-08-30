@@ -1,4 +1,4 @@
-OBJS_BOOTPACK = bootasm.o bootmain.o basic.o font.o sprintf.o vsprintf.o strtoul0.o strlen.o dsctbl.o graph.o int.o int_asm.o fifo.o memory.o layer.o timer.o mtask.o keyboard.o
+OBJS_BOOTPACK = bootasm.o bootmain.o basic.o font.o sprintf.o vsprintf.o strtoul0.o strlen.o dsctbl.o graph.o int.o int_asm.o fifo.o memory.o layer.o timer.o mtask.o keyboard.o strcmp.o
 
 INCPATH  = ./../
 
@@ -53,7 +53,7 @@ font.bin : makefont.a ./src/boot/hankaku.txt
 %.o : ./src/golibc/%.c
 	$(CC) ./src/golibc/$*.c
 	
-%.o : ./src/boot/%.c
+%.o : ./src/boot/%.c ./src/boot/%.h
 	$(CC) ./src/boot/$*.c
 
 debug : goo.img

@@ -12,6 +12,7 @@
 #include "timer.h"
 #include "mtask.h"
 #include "keyboard.h"
+#include "fat12.h"
 
 struct LAYER_CTL * layctl;                     //初始化定义层控制体
 struct LAYER *lay_back,*lay_mouse,*lay_win;        //定义鼠标层和背景层
@@ -28,7 +29,7 @@ void bootmain(void) {
     init_pit();
 
 
-    char *buf_back,*buf_mouse,*buf_win;
+    unsigned char *buf_back,*buf_mouse,*buf_win;
     unsigned char keybuf[32],mousebuf[128],timerbuf[32];                //鼠标和键盘中断缓存，（在栈中）
     struct FIFO8 timerfifo;
     fifo8_init(&keyfifo,   32,  keybuf  );
@@ -94,7 +95,6 @@ void bootmain(void) {
     sti();
     io_out8(PIC0_IMR, 0xf8); /* PIC1とキーボードを許可(11111001) */                    //开始接受鼠标和键盘中断
     io_out8(PIC1_IMR, 0xef); /* マウスを許可(11101111) */
-    unsigned char mouse_dbuff[3];
     struct MOUSE_DEC mdec;
     init_keyboard();
     enable_mouse(&mdec);
@@ -116,7 +116,7 @@ void bootmain(void) {
     /* main主循环部分变量初始化 */
     int kflag,mflag,tflag;                                                                //初始化键盘鼠标中断相关变量
     int x = 8;
-    int color;
+    int color = 0;
 
     /* task_console */
     struct TASK *task_cons;
@@ -325,7 +325,7 @@ void bootmain(void) {
 void task_cons_main(struct LAYER *layer){
     struct FIFO8 tfifo;
     struct TIMER *timer_put;
-    int i,color;
+    int i,color = 0;
     unsigned char tfifobuf[32],kfifobuf[128];
     char s[12],cmdline[30];
     int x,y;
@@ -378,6 +378,7 @@ void task_cons_main(struct LAYER *layer){
                         break;
                     case 10:
                         boxfill8(layer->buf, layer->bxsize, COL8_BLACK, x, y, x + 8, y + 16);
+                        layer_refresh(layer, x, y, x + 8, y + 16);
                         cmdline[x / 8 - 2] = '\0';
                         y = cons_newline(y, layer);
                         if(!strcmp(cmdline,"mem")){
@@ -394,6 +395,28 @@ void task_cons_main(struct LAYER *layer){
                             }
                             layer_refresh(layer, 8, 28, 8 + CON_TEXT_X, 28 + CON_TEXT_Y);
                             y = 28;
+                        }else if(!strcmp(cmdline,"ls")){
+                            struct FILEINFO *finfo = (struct FILEINFO *)(ADR_DISKIMG + 0x002620);
+                            /*sprintf(s,"%s",finfo[0].name);*/
+                            /*print_refreshable_font(layer, 8, y, COL8_WHITE, COL8_BLACK, s);*/
+                            for(int x = 0; x < 224 && finfo[x].name[0] != '\0';  x++){
+                                /*if (finfo[x].name[0] == 0x00)*/
+                                    /*break;*/
+                                if (finfo[x].name[0] != 0xe5){
+                                    if((finfo[x].type & 0x18) == 0){
+                                        sprintf(s, "filename.ext    %7d", finfo[x].size);
+                                        for(int y = 0; y < 8; y++){
+                                            s[y] = finfo[x].name[y];
+                                        }
+                                        s[9] = finfo[x].ext[0];
+                                        s[10] = finfo[x].ext[1];
+                                        s[11] = finfo[x].ext[2];
+                                        print_refreshable_font(layer, 8, y, COL8_WHITE, COL8_BLACK, s);
+                                        y = cons_newline(y, layer);
+                                    }
+                                }
+                            }
+                            y = cons_newline(y, layer);
                         }else if(cmdline[0] != '\0'){
                             sprintf(s,"No Such Command \"%s\".",cmdline);
                             print_refreshable_font(layer, 8, y, COL8_WHITE, COL8_BLACK, s);

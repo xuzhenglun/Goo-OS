@@ -2,7 +2,7 @@
 
 #include "basic.h"
 
-void boxfill8(char *vram, int xsize, unsigned char c, int x0, int y0,int x1, int y1){
+void boxfill8(unsigned char *vram, int xsize, unsigned char c, int x0, int y0,int x1, int y1){
     int x,y;
     for(y=y0;y<=y1;y++){
          for(x=x0;x<=x1;x++)
@@ -51,7 +51,7 @@ void set_palette(int start,int end,unsigned char *rgb){
 }
 
 
-void putfont8(char *vram, int xsize,int x,int y,char c,char *font){
+void putfont8(unsigned char *vram, int xsize,int x,int y,char c,char *font){
     char d;
     for(int i= 0;i < 16 ; i++){
         d=font[i];
@@ -67,7 +67,7 @@ void putfont8(char *vram, int xsize,int x,int y,char c,char *font){
 }
 
 
-void print_fonts(char *vram, int xsize, int x, int y, char c, char *s){
+void print_fonts(unsigned char *vram, int xsize, int x, int y, char c, char *s){
     extern char  _binary_font_bin_start[4096];
      for(; *s != '\0' ;s++){
          putfont8(vram,xsize,x,y,c,_binary_font_bin_start + *s *16);
@@ -75,7 +75,7 @@ void print_fonts(char *vram, int xsize, int x, int y, char c, char *s){
      }
 }
 
-void init_mouse_cursor(char * mouse, char bc){
+void init_mouse_cursor(unsigned char * mouse, char bc){
     static char cursor[16][16] = {
 		"**************..",
 		"*OOOOOOOOOOO*...",
@@ -111,7 +111,7 @@ void init_mouse_cursor(char * mouse, char bc){
 }
 
 
-void putblock8_8(char *vram,int vxsize, int pxsize,int pysize,int px0,int py0, char *buf,int bxsize){
+void putblock8_8(unsigned char *vram,int vxsize, int pxsize,int pysize,int px0,int py0, char *buf,int bxsize){
     for(int y = 0;y < pysize; y++){
         for(int x = 0;x < pxsize; x++){
             vram[(py0 + y) * vxsize + (px0 + x)] = buf[y * bxsize + x];
@@ -119,7 +119,7 @@ void putblock8_8(char *vram,int vxsize, int pxsize,int pysize,int px0,int py0, c
     }
 }
 
-void init_screen8(char * vram, int xsize,int ysize){
+void init_screen8(unsigned char * vram, int xsize,int ysize){
 	boxfill8(vram ,xsize,COL8_LD_BLUE     ,0          ,0          ,xsize -1  ,ysize - 29 );
     boxfill8(vram ,xsize,COL8_GREY        ,0          ,ysize - 28 ,xsize -1  ,ysize - 28 );
     boxfill8(vram ,xsize,COL8_WHITE       ,0          ,ysize - 27 ,xsize -1  ,ysize - 27 );
@@ -139,7 +139,7 @@ void init_screen8(char * vram, int xsize,int ysize){
 
 }
 
-void make_wtitle8(char * buf, int xsize, char *title, int act){
+void make_wtitle8(unsigned char * buf, int xsize, char *title, int act){
 	static char closebtn[14][16] = {
 		"OOOOOOOOOOOOOOO@",
 		"OQQQQQQQQQQQQQ$@",
@@ -187,7 +187,7 @@ void make_wtitle8(char * buf, int xsize, char *title, int act){
 	return;
 }
 
-void make_window8(char *buf, int xsize, int ysize, char *title, int  act){
+void make_window8(unsigned char *buf, int xsize, int ysize, char *title, int  act){
     boxfill8(buf, xsize, COL8_GREY, 0,         0,         xsize - 1, 0        );
     boxfill8(buf, xsize, COL8_WHITE, 1,         1,         xsize - 2, 1        );
     boxfill8(buf, xsize, COL8_GREY, 0,         0,         0,         ysize - 1);
@@ -205,8 +205,8 @@ void print_refreshable_font(struct LAYER *lay,int x,int y, int color, int backgr
     for(char * l = s; *l != '\0'; l++ ){
         len++;
     }
-    boxfill8((char *)lay->buf, lay->bxsize, background, x, y, x + len * 8,y + 16);
-    print_fonts((char *)lay->buf,lay->bxsize,x,y,color,s);
+    boxfill8(lay->buf, lay->bxsize, background, x, y, x + len * 8,y + 16);
+    print_fonts(lay->buf,lay->bxsize,x,y,color,s);
     layer_refresh(lay,x,y,x + len * 8, y + 16);
 }
 

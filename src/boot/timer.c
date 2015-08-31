@@ -13,7 +13,7 @@ void  init_pit(void){
     timerctrl.head = timer_alloc();
     timerctrl.head->timeout = -1;
     timerctrl.head->flags   = TIMER_FLAGS_USING;
-    timerctrl.head->next    = -1;
+    timerctrl.head->next    = (struct TIMER *) -1;
 }
 
 struct TIMER *timer_alloc(void){

@@ -13,6 +13,9 @@ goo.img : os.img bootblock.bin
 	mkdir ./tmp
 	sudo mount -o loop os.img ./tmp
 	sudo cp bootblock.bin ./tmp/bootblock.sys
+	sudo touch ./tmp/mock.c
+	sudo touch ./tmp/mock.o
+	sudo touch ./tmp/mock.bin
 	sudo umount ./tmp
 	mv os.img goo.img
 

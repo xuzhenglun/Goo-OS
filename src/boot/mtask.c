@@ -19,7 +19,7 @@ struct TASK *task_init(struct MEMMAN *mem){
     }
     task = task_alloc(1,0x0,0,0);
     task->flags = TASK_RUNNING;
-    task->father = -1;//INIT 任务没有父进程，与初始化进程的父进程为0作区别，取-1
+    task->father = (struct TASK *)-1;//INIT 任务没有父进程，与初始化进程的父进程为0作区别，取-1
     taskctrl->running = 1;
     taskctrl->now     = task;
     taskctrl->INIT = task;
@@ -110,7 +110,7 @@ void preorder(struct TASK *root,struct TASKCTRL *taskctrl){
 }
 
 void task_sleep(struct TASK *task){
-    if(task->father == -1 || taskctrl->running == 1){
+    if(task->father == (struct TASK *)-1 || taskctrl->running == 1){
         hlt();
     }else{
         task->flags = TASK_SLEEPING;

@@ -20,21 +20,13 @@ struct LAYER_CTL {
 };
 
 struct LAYER_CTL * layer_ctl_init(struct MEMMAN *man, unsigned char *vram, int xsize ,int ysize);
-
 struct LAYER * layer_alloc(struct LAYER_CTL *ctl);
-
 void layer_setbuf(struct LAYER *lay, unsigned char *buf, int xsize, int ysize, int col_inv);
-
 void layer_updown(struct LAYER * lay, int height);
-
 void layer_refresh(struct LAYER * lay, int bx0, int by0, int bx1, int by1);
-
 void layer_slide(struct LAYER * lay, int vx0, int vy0);
-
 void layer_free(struct LAYER *lay);
-
 void layer_refresh_sub(struct LAYER_CTL *ctl, int vx0, int vy0, int vx1, int vy1, int h0, int h1);
-
 void layer_refresh_map(struct LAYER_CTL *ctl, int vx0, int vy0, int vx1, int vy1,int h0);
 
 #endif

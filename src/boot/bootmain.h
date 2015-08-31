@@ -22,7 +22,7 @@ int cons_newline(int y, struct LAYER *layer);
 struct BOOTINFO{
     char cyls,leds,vmode,reserve;
     short scrnx,scrny;
-    char *vram;
+    unsigned char *vram;
 };
 
 #endif

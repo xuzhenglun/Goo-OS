@@ -22,14 +22,14 @@
 
 void init_palette(void);
 void set_palette(int start,int end,unsigned char *rbg);
-void boxfill8(char *vram, int xsize, unsigned char c, int x0, int y0,int x1, int y1);
-void putfont8(char *vram, int xsize,int x,int y,char c,char *font);
-void print_fonts(char *vram, int xsize, int x, int y, char c, char *s);
-void init_mouse_cursor(char * mouse, char bc);
-void putblock8_8(char *vram,int vxsize, int pxsize,int pysize,int px0,int py0, char *buf,int bxsize);
-void init_screen8(char * vram, int xsize,int ysize);
-void make_window8(char *buf, int xsize, int ysize,char *title, int act);
-void make_wtitle8(char *buf, int xsize, char *title, int act);
+void boxfill8(unsigned char *vram, int xsize, unsigned char c, int x0, int y0,int x1, int y1);
+void putfont8(unsigned char *vram, int xsize,int x,int y,char c,char *font);
+void print_fonts(unsigned char *vram, int xsize, int x, int y, char c, char *s);
+void init_mouse_cursor(unsigned char * mouse, char bc);
+void putblock8_8(unsigned char *vram,int vxsize, int pxsize,int pysize,int px0,int py0, char *buf,int bxsize);
+void init_screen8(unsigned char * vram, int xsize,int ysize);
+void make_window8(unsigned char *buf, int xsize, int ysize,char *title, int act);
+void make_wtitle8(unsigned char *buf, int xsize, char *title, int act);
 void print_refreshable_font(struct LAYER *lay,int x,int y, int color, int background, char * s);
 void make_textbox(struct LAYER *lay, int x0, int y0, int sx, int sy, int c);
 

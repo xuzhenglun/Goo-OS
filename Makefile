@@ -1,4 +1,4 @@
-OBJS_BOOTPACK = bootasm.o bootmain.o basic.o font.o sprintf.o vsprintf.o strtoul0.o strlen.o dsctbl.o graph.o int.o int_asm.o fifo.o memory.o layer.o timer.o mtask.o keyboard.o strcmp.o
+OBJS_BOOTPACK = bootasm.o bootmain.o basic.o font.o sprintf.o vsprintf.o strtoul0.o strlen.o dsctbl.o graph.o int.o int_asm.o fifo.o memory.o layer.o timer.o mtask.o keyboard.o strcmp.o memcmp.o memcpy.o
 
 INCPATH  = ./../
 
@@ -16,6 +16,9 @@ goo.img : os.img bootblock.bin
 	sudo touch ./tmp/mock.c
 	sudo touch ./tmp/mock.o
 	sudo touch ./tmp/mock.bin
+	echo "God's in his heaven. All's right with the world!" > ./NERV.txt
+	sudo cp ./NERV.txt ./tmp/NERV.txt
+	rm ./NERV.txt
 	sudo umount ./tmp
 	mv os.img goo.img
 

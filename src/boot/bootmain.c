@@ -331,6 +331,7 @@ void task_cons_main(struct LAYER *layer){
     int x,y;
     struct TASK *task = task_now();
     struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
+    struct FILEINFO *finfo = (struct FILEINFO *)(ADR_DISKIMG + 0x002600);
 
     fifo8_init(&tfifo, 32, tfifobuf);
     fifo8_init(&task->kfifo, 128,kfifobuf);
@@ -396,25 +397,75 @@ void task_cons_main(struct LAYER *layer){
                             layer_refresh(layer, 8, 28, 8 + CON_TEXT_X, 28 + CON_TEXT_Y);
                             y = 28;
                         }else if(!strcmp(cmdline,"ls")){
-                            struct FILEINFO *finfo = (struct FILEINFO *)(ADR_DISKIMG + 0x002620);
                             /*sprintf(s,"%s",finfo[0].name);*/
                             /*print_refreshable_font(layer, 8, y, COL8_WHITE, COL8_BLACK, s);*/
-                            for(int x = 0; x < 224 && finfo[x].name[0] != '\0';  x++){
+                            for(int x = 0; x < 224 && finfo[x].filename.name[0] != '\0';  x++){
                                 /*if (finfo[x].name[0] == 0x00)*/
                                     /*break;*/
-                                if (finfo[x].name[0] != 0xe5){
+                                if (finfo[x].filename.name[0] != 0xe5){
                                     if((finfo[x].type & 0x18) == 0){
                                         sprintf(s, "filename.ext    %7d", finfo[x].size);
                                         for(int y = 0; y < 8; y++){
-                                            s[y] = finfo[x].name[y];
+                                            s[y] = finfo[x].filename.name[y];
                                         }
-                                        s[9] = finfo[x].ext[0];
-                                        s[10] = finfo[x].ext[1];
-                                        s[11] = finfo[x].ext[2];
+                                        s[9] = finfo[x].filename.ext[0];
+                                        s[10] = finfo[x].filename.ext[1];
+                                        s[11] = finfo[x].filename.ext[2];
                                         print_refreshable_font(layer, 8, y, COL8_WHITE, COL8_BLACK, s);
                                         y = cons_newline(y, layer);
                                     }
                                 }
+                            }
+                            y = cons_newline(y, layer);
+                        }else if(cmdline[0] == 'c' && cmdline[1] == 'a' && cmdline[2] == 't' && cmdline[3] == ' '){
+                            struct FILENAME file;
+                            memcpy(&file,&"           ",sizeof(struct FILENAME));
+                            int index = 0;
+                            int flag = 0;
+                            for(int i = 4; cmdline[i] != '\0' && i < 30 && index < 11; i++){
+                                if(cmdline[i] == '.'){
+                                    index = 8;
+                                    flag = 1;
+                                }
+                                if(cmdline[i] != ' ' && cmdline[i] != '.'){
+                                    if(cmdline[i] <= 'z' && cmdline[i] >= 'a')
+                                        cmdline[i] = cmdline[i] - ('a' - 'A');
+                                    if(flag == 0 && index < 8)
+                                        file.name[index] = cmdline[i];
+                                    else
+                                        file.ext[index - 8] = cmdline[i];
+                                    if((flag == 0 && index < 8) || (flag == 1 && index >= 8))
+                                        index++;
+                                }
+                            }
+                            int fileid = -1;
+                            for(int i = 0; i < 224; i++){
+                                if(!memcmp(&file,&finfo[i].filename,sizeof(struct FILENAME))){
+                                fileid = i;
+                                break;
+                                }
+                            }
+                            int cursor_x = 8;
+                            if(fileid != -1){
+                                int filesize = finfo[fileid].size;
+                                char *p = (char *)(finfo[fileid].clustno * 512 + 0x003e00 + ADR_DISKIMG);
+                                for(int i = 0; i < filesize ; i++){
+                                    if(p[i] == '\n' || p[i] == '\r'){
+                                        y = cons_newline(y, layer);
+                                        cursor_x = 8;
+                                    }else{
+                                        s[0] = p[i];
+                                        s[1] = '\0';
+                                        print_refreshable_font(layer, cursor_x, y, COL8_WHITE, COL8_BLACK, s);
+                                        cursor_x += 8;
+                                }
+                                    if(cursor_x == 8 + CON_TEXT_X){
+                                        cursor_x = 8;
+                                        y = cons_newline(y, layer);
+                                    }
+                                }
+                            }else{
+                                print_refreshable_font(layer, cursor_x, y, COL8_WHITE, COL8_BLACK, "No Such File");
                             }
                             y = cons_newline(y, layer);
                         }else if(cmdline[0] != '\0'){

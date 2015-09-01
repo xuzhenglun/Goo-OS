@@ -1,6 +1,6 @@
 OBJS_BOOTPACK = bootasm.o bootmain.o basic.o font.o sprintf.o vsprintf.o strtoul0.o strlen.o dsctbl.o graph.o int.o int_asm.o fifo.o memory.o layer.o timer.o mtask.o keyboard.o strcmp.o memcmp.o memcpy.o
 
-INCPATH  = ./../
+INCPATH  = ./src/golibc/
 
 MAKE     = make
 NASM     = nasm
@@ -48,7 +48,7 @@ bootblock.o : $(OBJS_BOOTPACK)
 	ld  -m elf_i386 -e start -Ttext 0xc400 -o bootblock.o $(OBJS_BOOTPACK)
 
 makefont.a : ./tools/makefont.c
-	gcc -m32  ./tools/makefont.c -o makefont.a
+	gcc  ./tools/makefont.c -o makefont.a
 
 font.o : font.bin
 	$(OBJCOPY) -I binary -O elf32-i386 -B i386 font.bin font.o

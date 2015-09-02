@@ -1,10 +1,15 @@
-OBJS_BOOTPACK = bootasm.o bootmain.o basic.o font.o sprintf.o vsprintf.o strtoul0.o strlen.o dsctbl.o graph.o int.o int_asm.o fifo.o memory.o layer.o timer.o mtask.o keyboard.o strcmp.o memcmp.o memcpy.o strncmp.o fat12.o
+OBJS_BOOTPACK = bootasm.o bootmain.o basic.o font.o sprintf.o vsprintf.o \
+				strtoul0.o strlen.o dsctbl.o graph.o int.o int_asm.o fifo.o \
+				memory.o layer.o timer.o mtask.o keyboard.o strcmp.o memcmp.o \
+				memcpy.o strncmp.o fat12.o console.o
 
 INCPATH  = ./src/golibc/
 
 MAKE     = make
 NASM     = nasm
-CC       = gcc -O0 -I$(INCPATH) -c -std=c99 -masm=intel -fno-pic -static -fno-builtin -fno-strict-aliasing -Wall -MD -ggdb -m32 -funsigned-char -fno-omit-frame-pointer -fno-stack-protector -fno-pic -O -c
+CC       = gcc -O0 -I$(INCPATH) -c -std=c99 -masm=intel -fno-pic -static \
+		   -fno-builtin -fno-strict-aliasing -Wall -MD -ggdb -m32 -funsigned-char \
+		   -fno-omit-frame-pointer -fno-stack-protector -fno-pic -O -c
 OBJCOPY  = objcopy
 
 

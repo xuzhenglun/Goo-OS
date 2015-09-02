@@ -24,6 +24,7 @@ void task_cons_main(struct LAYER *layer){
     struct TASK *task = task_now();
     struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
     struct FILEINFO *finfo = (struct FILEINFO *)(ADR_DISKIMG + 0x002600);
+    struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *)ADR_GDT;
 
     fifo8_init(&tfifo, 32, tfifobuf);
     fifo8_init(&task->kfifo, 128,kfifobuf);
@@ -113,42 +114,13 @@ void task_cons_main(struct LAYER *layer){
                             }
                             y = cons_newline(y, layer);
                         }else if(!strncmp(cmdline, "cat", 3)){
-                            struct FILENAME file;
-                            memcpy(&file,&"           ",sizeof(struct FILENAME));
-                            int index = 0;
-                            int flag = 0;
-                            for(int i = 4; cmdline[i] != '\0' && i < 30 && index < 11; i++){
-                                if(cmdline[i] == '.'){
-                                    index = 8;
-                                    flag = 1;
-                                }
-                                if(cmdline[i] != ' ' && cmdline[i] != '.'){
-                                    if(cmdline[i] <= 'z' && cmdline[i] >= 'a')
-                                        cmdline[i] = cmdline[i] - ('a' - 'A');
-                                    if(flag == 0 && index < 8)
-                                        file.name[index] = cmdline[i];
-                                    else
-                                        file.ext[index - 8] = cmdline[i];
-                                    if((flag == 0 && index < 8) || (flag == 1 && index >= 8))
-                                        index++;
-                                }
-                            }
-                            int fileid = -1;
-                            for(int i = 0; i < 224; i++){
-                                if(!memcmp(&file,&finfo[i].filename,sizeof(struct FILENAME))){
-                                fileid = i;
-                                break;
-                                }
-                            }
+                            int fileid = find_file(cmdline,4);
                             int cursor_x = 8;
                             if(fileid != -1){
                                 int filesize = finfo[fileid].size;
-                                /*char *p = (char *)(finfo[fileid].clustno * 512 + 0x003e00 + ADR_DISKIMG);*/
-                                char *p = (char *) mem_alloc_4k(memman, filesize);
-                                file_loadfile(finfo[fileid].clustno, filesize, p, fat, (char *)(ADR_DISKIMG + 0x003e00));
+                                char *p = (char *) mem_alloc_4k(memman, finfo[fileid].size);
+                                file_loadfile(finfo[fileid].clustno, finfo[fileid].size, p, fat, (char *)(ADR_DISKIMG + 0x003e00));
                                 for(int i = 0; i < filesize ; i++){
-                                    /*sprintf(s,"%X",&p[i]);*/
-                                    /*print_refreshable_font(layer, 0, 0, COL8_WHITE, COL8_BLACK,s);*/
                                     if(p[i] == '\r' );
                                     else if(p[i] == '\n'){
                                         y = cons_newline(y, layer);
@@ -173,6 +145,18 @@ void task_cons_main(struct LAYER *layer){
                                 mem_free(memman, (int)p, filesize);
                             }else{
                                 print_refreshable_font(layer, cursor_x, y, COL8_WHITE, COL8_BLACK, "No Such File");
+                            }
+                            y = cons_newline(y, layer);
+                        }else if(!strncmp(cmdline, "start",5)){
+                            int fileid = find_file(cmdline,6);
+                            if(fileid != -1){
+                                char *p = (char *)mem_alloc_4k(memman, finfo[fileid].size);
+                                file_loadfile(finfo[fileid].clustno, finfo[fileid].size, p, fat, (char *)(ADR_DISKIMG + 0x003e00));
+                                set_segmdesc(gdt + 1003, finfo[fileid].size - 1, (int)p, AR_CODE32_ER);
+                                farjump(0, 1003 << 3);
+                                mem_free(memman, (int)p, finfo[fileid].size);
+                            }else{
+                                print_refreshable_font(layer, x, y, COL8_WHITE, COL8_BLACK, "No Such File");
                             }
                             y = cons_newline(y, layer);
                         }else if(cmdline[0] != '\0'){
@@ -225,4 +209,36 @@ int cons_newline(int cursor_y, struct LAYER *layer){
         layer_refresh(layer, 8 , 28, 8 + CON_TEXT_X, 28 + CON_TEXT_Y);
     }
     return cursor_y;
+}
+
+int find_file(char *cmdline, int start){
+    struct FILEINFO *finfo = (struct FILEINFO *)(ADR_DISKIMG + 0x002600);
+    struct FILENAME file;
+    memcpy(&file,&"           ",sizeof(struct FILENAME));
+    int index = 0;
+    int flag = 0;
+    for(int i = start; cmdline[i] != '\0' && i < 30 && index < 11; i++){
+        if(cmdline[i] == '.'){
+            index = 8;
+            flag = 1;
+        }
+        if(cmdline[i] != ' ' && cmdline[i] != '.'){
+            if(cmdline[i] <= 'z' && cmdline[i] >= 'a')
+               cmdline[i] = cmdline[i] - ('a' - 'A');
+            if(flag == 0 && index < 8)
+                file.name[index] = cmdline[i];
+            else
+                file.ext[index - 8] = cmdline[i];
+            if((flag == 0 && index < 8) || (flag == 1 && index >= 8))
+                index++;
+        }
+    }
+    int fileid = -1;
+    for(int i = 0; i < 224; i++){
+        if(!memcmp(&file,&finfo[i].filename,sizeof(struct FILENAME))){
+            fileid = i;
+            break;
+        }
+    }
+    return fileid;
 }

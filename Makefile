@@ -3,6 +3,8 @@ OBJS_BOOTPACK = bootasm.o bootmain.o basic.o font.o sprintf.o vsprintf.o \
 				memory.o layer.o timer.o mtask.o keyboard.o strcmp.o memcmp.o \
 				memcpy.o strncmp.o fat12.o console.o
 
+APPS = hlt.go
+
 INCPATH  = ./src/golibc/
 
 MAKE     = make
@@ -13,7 +15,7 @@ CC       = gcc -O0 -I$(INCPATH) -c -std=c99 -masm=intel -fno-pic -static \
 OBJCOPY  = objcopy
 
 
-goo.img : os.img bootblock.bin Makefile
+goo.img : os.img bootblock.bin Makefile $(APPS)
 	rm ./tmp -rf
 	mkdir ./tmp
 	sudo mount -o loop os.img ./tmp
@@ -23,6 +25,7 @@ goo.img : os.img bootblock.bin Makefile
 	rm ./NERV.txt
 	sudo cp ./src/boot/IPL.s ./tmp/
 	sudo cp ./src/boot/basic.c ./tmp/
+	sudo cp *.go ./tmp/
 	sudo umount ./tmp
 	mv os.img goo.img
 
@@ -48,6 +51,9 @@ os.img : IPL.bin Makefile
 bootblock.bin : bootblock.o Makefile
 	$(OBJCOPY) --set-section-flags .bss=alloc,load,contents -O binary bootblock.o bootblock.bin
 
+%.go : %.o Makefile
+	$(OBJCOPY) --set-section-flags .bss=alloc,load,contents -O binary $*.o $*.go
+
 bootblock.o : $(OBJS_BOOTPACK) Makefile
 	ld  -m elf_i386 -e start -Ttext 0xc400 -o bootblock.o $(OBJS_BOOTPACK)
 
@@ -60,9 +66,12 @@ font.o : font.bin Makefile
 font.bin : makefont.a ./src/boot/hankaku.txt Makefile
 	./makefont.a ./src/boot/hankaku.txt font.bin
 
+%.o : ./src/app/%.s Makefile
+	$(NASM) -f elf32 ./src/app/$*.s -o $*.o
+
 %.o : ./src/golibc/%.c Makefile
 	$(CC) ./src/golibc/$*.c
-	
+
 %.o : ./src/boot/%.c ./src/boot/%.h Makefile
 	$(CC) ./src/boot/$*.c
 
@@ -79,6 +88,7 @@ clean :
 	find . -name "*.d"  | xargs rm -f
 	find . -name "*.a"  | xargs rm -f
 	find . -name "*.bin"  | xargs rm -f
+	find . -name "*.go" | xargs rm -f
 	rm ./tmp -rf
 
-travis: bootblock.bin os.img
+travis: bootblock.bin os.img $(APPS)

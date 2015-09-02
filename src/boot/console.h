@@ -8,5 +8,6 @@ extern struct TIMERCTRL timerctrl;
 
 void task_cons_main(struct LAYER *lay_win_b);
 int cons_newline(int y, struct LAYER *layer);
+int find_file(char *cmdline, int start);
 
 #endif

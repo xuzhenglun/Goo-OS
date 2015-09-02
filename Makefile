@@ -1,4 +1,4 @@
-OBJS_BOOTPACK = bootasm.o bootmain.o basic.o font.o sprintf.o vsprintf.o strtoul0.o strlen.o dsctbl.o graph.o int.o int_asm.o fifo.o memory.o layer.o timer.o mtask.o keyboard.o strcmp.o memcmp.o memcpy.o
+OBJS_BOOTPACK = bootasm.o bootmain.o basic.o font.o sprintf.o vsprintf.o strtoul0.o strlen.o dsctbl.o graph.o int.o int_asm.o fifo.o memory.o layer.o timer.o mtask.o keyboard.o strcmp.o memcmp.o memcpy.o strncmp.o
 
 INCPATH  = ./src/golibc/
 
@@ -8,7 +8,7 @@ CC       = gcc -O0 -I$(INCPATH) -c -std=c99 -masm=intel -fno-pic -static -fno-bu
 OBJCOPY  = objcopy
 
 
-goo.img : os.img bootblock.bin
+goo.img : os.img bootblock.bin Makefile
 	rm ./tmp -rf
 	mkdir ./tmp
 	sudo mount -o loop os.img ./tmp
@@ -21,44 +21,44 @@ goo.img : os.img bootblock.bin
 	sudo umount ./tmp
 	mv os.img goo.img
 
-black.bin : ./src/app/black.s
+black.bin : ./src/app/black.si Makefile
 	$(NASM) ./src/app/black.s -o black.bin
 
-IPL.bin : ./src/boot/IPL.s
+IPL.bin : ./src/boot/IPL.s Makefile
 	$(NASM) ./src/boot/IPL.s -o IPL.bin
 	
-bootasm.o : ./src/boot/bootasm.s
+bootasm.o : ./src/boot/bootasm.s Makefile
 	$(NASM) -f elf32 ./src/boot/bootasm.s -o bootasm.o
 
-int_asm.o : ./src/boot/int_asm.s
+int_asm.o : ./src/boot/int_asm.s Makefile
 	$(NASM) -f elf32 ./src/boot/int_asm.s -o int_asm.o
 
 #io_out8.o : ./src/boot/io_out8.s
 	#$(NASM) -f elf32 ./src/boot/io_out8.s -o io_out8.o
 
-os.img : IPL.bin
+os.img : IPL.bin Makefile
 	cp IPL.bin os.img
 	dd if=/dev/zero of=os.img bs=512 seek=1 count=2879
 
-bootblock.bin : bootblock.o
+bootblock.bin : bootblock.o Makefile
 	$(OBJCOPY) --set-section-flags .bss=alloc,load,contents -O binary bootblock.o bootblock.bin
 
-bootblock.o : $(OBJS_BOOTPACK)
+bootblock.o : $(OBJS_BOOTPACK) Makefile
 	ld  -m elf_i386 -e start -Ttext 0xc400 -o bootblock.o $(OBJS_BOOTPACK)
 
-makefont.a : ./tools/makefont.c
+makefont.a : ./tools/makefont.c Makefile
 	gcc  ./tools/makefont.c -o makefont.a
 
-font.o : font.bin
+font.o : font.bin Makefile
 	$(OBJCOPY) -I binary -O elf32-i386 -B i386 font.bin font.o
 
-font.bin : makefont.a ./src/boot/hankaku.txt
+font.bin : makefont.a ./src/boot/hankaku.txt Makefile
 	./makefont.a ./src/boot/hankaku.txt font.bin
 
-%.o : ./src/golibc/%.c
+%.o : ./src/golibc/%.c Makefile
 	$(CC) ./src/golibc/$*.c
 	
-%.o : ./src/boot/%.c ./src/boot/%.h
+%.o : ./src/boot/%.c ./src/boot/%.h Makefile
 	$(CC) ./src/boot/$*.c
 
 debug : goo.img

@@ -418,7 +418,7 @@ void task_cons_main(struct LAYER *layer){
                                 }
                             }
                             y = cons_newline(y, layer);
-                        }else if(cmdline[0] == 'c' && cmdline[1] == 'a' && cmdline[2] == 't' && cmdline[3] == ' '){
+                        }else if(!strncmp(cmdline, "cat ", 4)){
                             struct FILENAME file;
                             memcpy(&file,&"           ",sizeof(struct FILENAME));
                             int index = 0;
@@ -451,14 +451,18 @@ void task_cons_main(struct LAYER *layer){
                                 int filesize = finfo[fileid].size;
                                 char *p = (char *)(finfo[fileid].clustno * 512 + 0x003e00 + ADR_DISKIMG);
                                 for(int i = 0; i < filesize ; i++){
-                                    sprintf(s,"%X",&p[i]);
-                                    print_refreshable_font(layer, 0, 0, COL8_WHITE, COL8_BLACK,s);
-                                    if(p[i] == '\n' || p[i] == '\r'){
+                                    /*sprintf(s,"%X",&p[i]);*/
+                                    /*print_refreshable_font(layer, 0, 0, COL8_WHITE, COL8_BLACK,s);*/
+                                    if(p[i] == '\r' );
+                                    else if(p[i] == '\n'){
                                         y = cons_newline(y, layer);
                                         cursor_x = 8;
                                     }else if(p[i] == '\t'){
-                                        print_refreshable_font(layer, cursor_x, y, COL8_WHITE, COL8_BLACK, "    ");
-                                        x += 8 * 4;
+                                        cursor_x += 8 * 4;
+                                        if(cursor_x >= 8 + CON_TEXT_X){
+                                            cursor_x = 8;
+                                            y = cons_newline(y, layer);
+                                        }
                                     }else{
                                         s[0] = p[i];
                                         s[1] = '\0';

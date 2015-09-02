@@ -348,6 +348,9 @@ void task_cons_main(struct LAYER *layer){
     print_refreshable_font(layer,8,28,COL8_WHITE,COL8_BLACK,">");
     layer_refresh(layer, 8, 28, 8 + 8, 28 + 16);
 
+    int *fat = (int *)mem_alloc_4k(memman, sizeof(int) * 2880);
+    file_readfat(fat, (unsigned char *)(ADR_DISKIMG + 0x000200));
+
     while(1){
         cli();
         if(fifo8_status(&tfifo) == 0 && fifo8_status(&task->kfifo) == 0){
@@ -449,7 +452,9 @@ void task_cons_main(struct LAYER *layer){
                             int cursor_x = 8;
                             if(fileid != -1){
                                 int filesize = finfo[fileid].size;
-                                char *p = (char *)(finfo[fileid].clustno * 512 + 0x003e00 + ADR_DISKIMG);
+                                /*char *p = (char *)(finfo[fileid].clustno * 512 + 0x003e00 + ADR_DISKIMG);*/
+                                char *p = (char *) mem_alloc_4k(memman, filesize);
+                                file_loadfile(finfo[fileid].clustno, filesize, p, fat, (char *)(ADR_DISKIMG + 0x003e00));
                                 for(int i = 0; i < filesize ; i++){
                                     /*sprintf(s,"%X",&p[i]);*/
                                     /*print_refreshable_font(layer, 0, 0, COL8_WHITE, COL8_BLACK,s);*/
@@ -474,6 +479,7 @@ void task_cons_main(struct LAYER *layer){
                                         y = cons_newline(y, layer);
                                     }
                                 }
+                                mem_free(memman, (int)p, filesize);
                             }else{
                                 print_refreshable_font(layer, cursor_x, y, COL8_WHITE, COL8_BLACK, "No Such File");
                             }

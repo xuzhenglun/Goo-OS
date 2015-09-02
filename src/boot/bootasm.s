@@ -126,7 +126,7 @@ start32:
     mov gs, ax
      
 ; 设置栈顶
-    mov esp, 0xc400
+    mov esp, start
 ; 调用Ｃ语言中的函数
     call bootmain
      

@@ -13,12 +13,11 @@ goo.img : os.img bootblock.bin
 	mkdir ./tmp
 	sudo mount -o loop os.img ./tmp
 	sudo cp bootblock.bin ./tmp/bootblock.sys
-	sudo touch ./tmp/mock.c
-	sudo touch ./tmp/mock.o
-	sudo touch ./tmp/mock.bin
 	echo "God's in his heaven. All's right with the world!" > ./NERV.txt
 	sudo cp ./NERV.txt ./tmp/NERV.txt
 	rm ./NERV.txt
+	sudo cp ./src/boot/IPL.s ./tmp/
+	sudo cp ./src/boot/basic.c ./tmp/
 	sudo umount ./tmp
 	mv os.img goo.img
 
@@ -42,7 +41,7 @@ os.img : IPL.bin
 	dd if=/dev/zero of=os.img bs=512 seek=1 count=2879
 
 bootblock.bin : bootblock.o
-	$(OBJCOPY)  -O binary bootblock.o bootblock.bin
+	$(OBJCOPY) --set-section-flags .bss=alloc,load,contents -O binary bootblock.o bootblock.bin
 
 bootblock.o : $(OBJS_BOOTPACK)
 	ld  -m elf_i386 -e start -Ttext 0xc400 -o bootblock.o $(OBJS_BOOTPACK)
@@ -76,3 +75,5 @@ clean :
 	find . -name "*.a"  | xargs rm -f
 	find . -name "*.bin"  | xargs rm -f
 	rm ./tmp -rf
+
+travis: bootblock.bin os.img

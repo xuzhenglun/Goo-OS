@@ -17,6 +17,7 @@
 struct LAYER_CTL * layctl;                     //初始化定义层控制体
 struct LAYER *lay_back,*lay_mouse,*lay_win;        //定义鼠标层和背景层
 struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR; //内存管理块的内存位置
+struct TIMERCTRL timerctrl;
 
 void bootmain(void) {
     struct BOOTINFO *binfo;                        //从内存中找到在IPL中保存的图形参数
@@ -450,9 +451,14 @@ void task_cons_main(struct LAYER *layer){
                                 int filesize = finfo[fileid].size;
                                 char *p = (char *)(finfo[fileid].clustno * 512 + 0x003e00 + ADR_DISKIMG);
                                 for(int i = 0; i < filesize ; i++){
+                                    sprintf(s,"%X",&p[i]);
+                                    print_refreshable_font(layer, 0, 0, COL8_WHITE, COL8_BLACK,s);
                                     if(p[i] == '\n' || p[i] == '\r'){
                                         y = cons_newline(y, layer);
                                         cursor_x = 8;
+                                    }else if(p[i] == '\t'){
+                                        print_refreshable_font(layer, cursor_x, y, COL8_WHITE, COL8_BLACK, "    ");
+                                        x += 8 * 4;
                                     }else{
                                         s[0] = p[i];
                                         s[1] = '\0';

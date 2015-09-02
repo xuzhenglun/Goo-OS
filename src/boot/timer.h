@@ -18,8 +18,9 @@ struct TIMERCTRL{
     unsigned long count,next;
     struct TIMER *head,*timer_p[MAX_TIMER];
     struct TIMER timer[MAX_TIMER];
-}timerctrl;
+};
 
+extern struct TIMERCTRL timerctrl;
 
 void init_pit(void);
 struct TIMER *timer_alloc(void);

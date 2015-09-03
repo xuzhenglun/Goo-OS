@@ -20,11 +20,7 @@ void task_cons_main(struct LAYER *layer){
     int i,color = 0;
     unsigned char tfifobuf[32],kfifobuf[128];
     char s[12],cmdline[30];
-    int x,y;
     struct TASK *task = task_now();
-    struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
-    struct FILEINFO *finfo = (struct FILEINFO *)(ADR_DISKIMG + 0x002600);
-    struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *)ADR_GDT;
 
     fifo8_init(&tfifo, 32, tfifobuf);
     fifo8_init(&task->kfifo, 128,kfifobuf);
@@ -34,14 +30,13 @@ void task_cons_main(struct LAYER *layer){
     fifo8_taskwaker(&tfifo,task);
     fifo8_taskwaker(&task->kfifo,task);
 
-    x = 8 + 8;
-    y = 28;
+    struct CONSOLE cons;
+    cons.x = 2 * 8;
+    cons.y = 28;
+    cons.layer = layer;
 
     print_refreshable_font(layer,8,28,COL8_WHITE,COL8_BLACK,">");
     layer_refresh(layer, 8, 28, 8 + 8, 28 + 16);
-
-    int *fat = (int *)mem_alloc_4k(memman, sizeof(int) * 2880);
-    file_readfat(fat, (unsigned char *)(ADR_DISKIMG + 0x000200));
 
     while(1){
         cli();
@@ -68,125 +63,39 @@ void task_cons_main(struct LAYER *layer){
             if( 0 <= i && i <= 0xff){
                 switch(i){
                     case 8:
-                        if(x > 16){
-                            print_refreshable_font(layer, x, y, COL8_BLACK, COL8_BLACK, " ");
-                            x  -= 8;
+                        if(cons.x > 16){
+                            print_refreshable_font(layer, cons.x, cons.y, COL8_BLACK, COL8_BLACK, " ");
+                            cons.x  -= 8;
                         }
                         break;
                     case 10:
-                        boxfill8(layer->buf, layer->bxsize, COL8_BLACK, x, y, x + 8, y + 16);
-                        layer_refresh(layer, x, y, x + 8, y + 16);
-                        cmdline[x / 8 - 2] = '\0';
-                        y = cons_newline(y, layer);
-                        if(!strcmp(cmdline,"mem")){
-                            int memtotal = memtest(0x00300000, 0xbfffffff); //总内存大小
-                            sprintf(s,"MEMORY:%dMB|FREE:%dKB",memtotal /(1024*1024),mem_total(memman)/1024);
-                            print_refreshable_font(layer, 8, y, COL8_WHITE, COL8_BLACK, s);
-                            y = cons_newline(y, layer);
-                            y = cons_newline(y, layer);
-                        }else if(!strcmp(cmdline,"clear")){
-                            for(int i = 28; i < 28 + CON_TEXT_Y; i++){
-                                for(int t = 8; t < 8 + CON_TEXT_X; t++){
-                                    layer->buf[t + i * layer->bxsize] = COL8_BLACK;
-                                }
-                            }
-                            layer_refresh(layer, 8, 28, 8 + CON_TEXT_X, 28 + CON_TEXT_Y);
-                            y = 28;
-                        }else if(!strcmp(cmdline,"ls")){
-                            /*sprintf(s,"%s",finfo[0].name);*/
-                            /*print_refreshable_font(layer, 8, y, COL8_WHITE, COL8_BLACK, s);*/
-                            for(int x = 0; x < 224 && finfo[x].filename.name[0] != '\0';  x++){
-                                /*if (finfo[x].name[0] == 0x00)*/
-                                    /*break;*/
-                                if (finfo[x].filename.name[0] != 0xe5){
-                                    if((finfo[x].type & 0x18) == 0){
-                                        sprintf(s, "filename.ext    %7d", finfo[x].size);
-                                        for(int y = 0; y < 8; y++){
-                                            s[y] = finfo[x].filename.name[y];
-                                        }
-                                        s[9] = finfo[x].filename.ext[0];
-                                        s[10] = finfo[x].filename.ext[1];
-                                        s[11] = finfo[x].filename.ext[2];
-                                        print_refreshable_font(layer, 8, y, COL8_WHITE, COL8_BLACK, s);
-                                        y = cons_newline(y, layer);
-                                    }
-                                }
-                            }
-                            y = cons_newline(y, layer);
-                        }else if(!strncmp(cmdline, "cat", 3)){
-                            int fileid = find_file(cmdline,4);
-                            int cursor_x = 8;
-                            if(fileid != -1){
-                                int filesize = finfo[fileid].size;
-                                char *p = (char *) mem_alloc_4k(memman, finfo[fileid].size);
-                                file_loadfile(finfo[fileid].clustno, finfo[fileid].size, p, fat, (char *)(ADR_DISKIMG + 0x003e00));
-                                for(int i = 0; i < filesize ; i++){
-                                    if(p[i] == '\r' );
-                                    else if(p[i] == '\n'){
-                                        y = cons_newline(y, layer);
-                                        cursor_x = 8;
-                                    }else if(p[i] == '\t'){
-                                        cursor_x += 8 * 4;
-                                        if(cursor_x >= 8 + CON_TEXT_X){
-                                            cursor_x = 8;
-                                            y = cons_newline(y, layer);
-                                        }
-                                    }else{
-                                        s[0] = p[i];
-                                        s[1] = '\0';
-                                        print_refreshable_font(layer, cursor_x, y, COL8_WHITE, COL8_BLACK, s);
-                                        cursor_x += 8;
-                                }
-                                    if(cursor_x == 8 + CON_TEXT_X){
-                                        cursor_x = 8;
-                                        y = cons_newline(y, layer);
-                                    }
-                                }
-                                mem_free(memman, (int)p, filesize);
-                            }else{
-                                print_refreshable_font(layer, cursor_x, y, COL8_WHITE, COL8_BLACK, "No Such File");
-                            }
-                            y = cons_newline(y, layer);
-                        }else if(!strncmp(cmdline, "start",5)){
-                            int fileid = find_file(cmdline,6);
-                            if(fileid != -1){
-                                char *p = (char *)mem_alloc_4k(memman, finfo[fileid].size);
-                                file_loadfile(finfo[fileid].clustno, finfo[fileid].size, p, fat, (char *)(ADR_DISKIMG + 0x003e00));
-                                set_segmdesc(gdt + 1003, finfo[fileid].size - 1, (int)p, AR_CODE32_ER);
-                                farjump(0, 1003 << 3);
-                                mem_free(memman, (int)p, finfo[fileid].size);
-                            }else{
-                                print_refreshable_font(layer, x, y, COL8_WHITE, COL8_BLACK, "No Such File");
-                            }
-                            y = cons_newline(y, layer);
-                        }else if(cmdline[0] != '\0'){
-                            sprintf(s,"No Such Command \"%s\".",cmdline);
-                            print_refreshable_font(layer, 8, y, COL8_WHITE, COL8_BLACK, s);
-                            y = cons_newline(y, layer);
-                            y = cons_newline(y, layer);
-                        }
-                        print_refreshable_font(layer, 8, y, COL8_WHITE, COL8_BLACK, ">");
-                        x = 16;
+                        boxfill8(layer->buf, layer->bxsize, COL8_BLACK, cons.x, cons.y, cons.x + 8, cons.y + 16);
+                        layer_refresh(layer, cons.x, cons.y, cons.x + 8, cons.y + 16);
+                        cmdline[cons.x / 8 - 2] = '\0';
+                        cons.y = cons_newline(cons.y, layer);
+                        cons_runcmd(cmdline, &cons);
+                        print_refreshable_font(layer, 8, cons.y, COL8_WHITE, COL8_BLACK, ">");
+                        cons.x = 16;
                         break;
                     default:
-                        if( x < CON_TEXT_X ){
+                        if( cons.x < CON_TEXT_X ){
                             s[0] = i;
                             s[1] = '\0';
-                            if(x / 8 - 2 < 30 - 1){  //边界检查，否则溢出崩溃
-                                cmdline[x / 8 - 2] = i;
+                            if(cons.x / 8 - 2 < 30 - 1){  //边界检查，否则溢出崩溃
+                                cmdline[cons.x / 8 - 2] = i;
                             };
-                            print_refreshable_font(layer, x, y, COL8_WHITE, COL8_BLACK, s);
-                            x += 8;
+                            print_refreshable_font(layer, cons.x, cons.y, COL8_WHITE, COL8_BLACK, s);
+                            cons.x += 8;
                         }
                 }
             }
-            boxfill8(layer->buf, layer->bxsize, color, x, y, x + 8, y + 16);
-            layer_refresh(layer, x, y, x + 8, y + 16);
+            boxfill8(layer->buf, layer->bxsize, color, cons.x, cons.y, cons.x + 8, cons.y + 16);
+            layer_refresh(layer, cons.x, cons.y, cons.x + 8, cons.y + 16);
         }
         if(task->now == 0 && color != COL8_BLACK){
             color = COL8_BLACK;
-            boxfill8(layer->buf, layer->bxsize, COL8_BLACK, x, y, x + 8, y + 16);
-            layer_refresh(layer, x, y, x + 8, y + 16);
+            boxfill8(layer->buf, layer->bxsize, COL8_BLACK, cons.x, cons.y, cons.x + 8, cons.y + 16);
+            layer_refresh(layer, cons.x, cons.y, cons.x + 8, cons.y + 16);
             task->now = -1;
         }
     }
@@ -241,4 +150,133 @@ int find_file(char *cmdline, int start){
         }
     }
     return fileid;
+}
+
+void cons_runcmd(char *cmdline, struct CONSOLE *console){
+    struct LAYER * layer = console->layer;
+    char s[30];
+    if(!strcmp(cmdline,"mem")){
+        cons_mem(console);
+    }else if(!strcmp(cmdline,"clear")){
+        cons_clear(console);
+    }else if(!strcmp(cmdline,"ls")){
+        cons_ls(console);
+    }else if(!strncmp(cmdline, "cat", 3)){
+        cons_cat(cmdline,console);
+    }else if(!strncmp(cmdline, "start",5)){
+        cons_startapp(cmdline,console);
+    }else if(cmdline[0] != '\0'){
+        sprintf(s,"No Such Command \"%s\".",cmdline);
+        print_refreshable_font(layer, 8, console->y, COL8_WHITE, COL8_BLACK, s);
+        console->y = cons_newline(console->y, layer);
+        console->y = cons_newline(console->y, layer);
+    }
+}
+
+void cons_mem(struct CONSOLE *console){
+    char s[30];
+    struct LAYER *layer = console->layer;
+    int memtotal = memtest(0x00300000, 0xbfffffff); //总内存大小
+    sprintf(s,"MEMORY:%dMB|FREE:%dKB",memtotal /(1024*1024),mem_total(memman)/1024);
+    print_refreshable_font(layer, 8, console->y, COL8_WHITE, COL8_BLACK, s);
+    console->y = cons_newline(console->y, layer);
+    console->y = cons_newline(console->y, layer);
+}
+
+void cons_clear(struct CONSOLE *console){
+    struct LAYER *layer = console->layer;
+    for(int i = 28; i < 28 + CON_TEXT_Y; i++){
+        for(int t = 8; t < 8 + CON_TEXT_X; t++){
+            layer->buf[t + i * layer->bxsize] = COL8_BLACK;
+        }
+    }
+    layer_refresh(layer, 8, 28, 8 + CON_TEXT_X, 28 + CON_TEXT_Y);
+    console->y = 28;
+}
+
+void cons_ls(struct CONSOLE *console){
+    struct FILEINFO *finfo = (struct FILEINFO *)(ADR_DISKIMG + 0x002600);
+    struct LAYER *layer = console->layer;
+    char s[30];
+    for(int x = 0; x < 224 && finfo[x].filename.name[0] != '\0';  x++){
+        if (finfo[x].filename.name[0] != 0xe5){
+            if((finfo[x].type & 0x18) == 0){
+                sprintf(s, "filename.ext    %7d", finfo[x].size);
+                for(int y = 0; y < 8; y++){
+                    s[y] = finfo[x].filename.name[y];
+                }
+                s[9] = finfo[x].filename.ext[0];
+                s[10] = finfo[x].filename.ext[1];
+                s[11] = finfo[x].filename.ext[2];
+                print_refreshable_font(layer, 8, console->y, COL8_WHITE, COL8_BLACK, s);
+                console->y = cons_newline(console->y, layer);
+            }
+        }
+    }
+    console->y = cons_newline(console->y, layer);
+
+}
+
+void cons_cat(char *cmdline, struct CONSOLE *console){
+    int fileid = find_file(cmdline,4);
+    int cursor_x = 8;
+    struct LAYER *layer = console->layer;
+    struct FILEINFO *finfo = (struct FILEINFO *)(ADR_DISKIMG + 0x002600);
+    struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
+    char s[30];
+    int *fat = (int *)mem_alloc_4k(memman, sizeof(int) * 2880);
+    file_readfat(fat, (unsigned char *)(ADR_DISKIMG + 0x000200));
+
+    if(fileid != -1){
+        int filesize = finfo[fileid].size;
+        char *p = (char *) mem_alloc_4k(memman, finfo[fileid].size);
+        file_loadfile(finfo[fileid].clustno, finfo[fileid].size, p, fat, (char *)(ADR_DISKIMG + 0x003e00));
+        for(int i = 0; i < filesize ; i++){
+            if(p[i] == '\r' );
+            else if(p[i] == '\n'){
+                console->y = cons_newline(console->y, layer);
+                cursor_x = 8;
+            }else if(p[i] == '\t'){
+                cursor_x += 8 * 4;
+                if(cursor_x >= 8 + CON_TEXT_X){
+                    cursor_x = 8;
+                    console->y = cons_newline(console->y, layer);
+                }
+            }else{
+                s[0] = p[i];
+                s[1] = '\0';
+                print_refreshable_font(layer, cursor_x, console->y, COL8_WHITE, COL8_BLACK, s);
+                cursor_x += 8;
+            }
+            if(cursor_x == 8 + CON_TEXT_X){
+                cursor_x = 8;
+                console->y = cons_newline(console->y, layer);
+            }
+        }
+        mem_free(memman, (int)p, filesize);
+    }else{
+        print_refreshable_font(layer, cursor_x, console->y, COL8_WHITE, COL8_BLACK, "No Such File");
+    }
+    console->y = cons_newline(console->y, layer);
+}
+
+void cons_startapp(char *cmdline, struct CONSOLE *console){
+    struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *)ADR_GDT;
+    struct LAYER *layer = console->layer;
+    struct FILEINFO *finfo = (struct FILEINFO *)(ADR_DISKIMG + 0x002600);
+    struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
+    int *fat = (int *)mem_alloc_4k(memman, sizeof(int) * 2880);
+    file_readfat(fat, (unsigned char *)(ADR_DISKIMG + 0x000200));
+
+    int fileid = find_file(cmdline,6);
+    if(fileid != -1){
+        char *p = (char *)mem_alloc_4k(memman, finfo[fileid].size);
+        file_loadfile(finfo[fileid].clustno, finfo[fileid].size, p, fat, (char *)(ADR_DISKIMG + 0x003e00));
+        set_segmdesc(gdt + 1003, finfo[fileid].size - 1, (int)p, AR_CODE32_ER);
+        farjump(0, 1003 << 3);
+        mem_free(memman, (int)p, finfo[fileid].size);
+    }else{
+        print_refreshable_font(layer, 8, console->y, COL8_WHITE, COL8_BLACK, "No Such File");
+    }
+    console->y = cons_newline(console->y, layer);
 }

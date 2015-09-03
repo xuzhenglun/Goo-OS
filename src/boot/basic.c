@@ -83,3 +83,9 @@ void farjump(int eip,int cs){
             "JMP FAR PTR [esp+8]"
         );
 }
+
+void farcall(int eip,int cs){
+    __asm__ __volatile__(
+            "CALL FAR PTR [esp+8]"
+        );
+}

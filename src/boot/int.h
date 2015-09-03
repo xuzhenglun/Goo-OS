@@ -27,5 +27,6 @@ void asm_int_handler_20(void);
 void asm_int_handler_21(void);
 void asm_int_handler_27(void);
 void asm_int_handler_2c(void);
+void asm_api_handler(void);
 
 #endif

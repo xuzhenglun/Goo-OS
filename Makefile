@@ -1,9 +1,9 @@
 OBJS_BOOTPACK = bootasm.o bootmain.o basic.o font.o sprintf.o vsprintf.o \
 				strtoul0.o strlen.o dsctbl.o graph.o int.o int_asm.o fifo.o \
 				memory.o layer.o timer.o mtask.o keyboard.o strcmp.o memcmp.o \
-				memcpy.o strncmp.o fat12.o console.o
+				memcpy.o strncmp.o fat12.o console.o api.o
 
-APPS = hlt.go
+APPS = hlt.go hello.go hello2.go
 
 INCPATH  = ./src/golibc/
 
@@ -74,6 +74,9 @@ font.bin : makefont.a ./src/boot/hankaku.txt Makefile
 
 %.o : ./src/boot/%.c ./src/boot/%.h Makefile
 	$(CC) ./src/boot/$*.c
+
+%.o : ./src/boot/%.s Makefile
+	$(NASM) -f elf32 ./src/boot/$*.s -o $*.o
 
 debug : goo.img
 	qemu-system-i386 -boot order=a -fda ./goo.img -m 8 -S -s -monitor stdio

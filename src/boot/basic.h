@@ -14,5 +14,6 @@ int load_cr0(void);
 void store_cr0(int cr0);
 void load_tr(short tr);
 void farjump(int eip,int cs);
+void farcall(int eip,int cs);
 
 #endif

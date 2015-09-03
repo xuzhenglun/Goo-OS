@@ -23,5 +23,7 @@ void cons_ls(struct CONSOLE *console);
 void cons_cat(char *cmdline, struct CONSOLE *console);
 void cons_startapp(char *cmdline, struct CONSOLE *console);
 void cons_print(struct CONSOLE *console, char *p, int filesize);
+void cons_putchar(struct CONSOLE *console, int chr);
+void cons_puts(struct CONSOLE *console, char *p);
 
 #endif

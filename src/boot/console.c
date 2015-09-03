@@ -31,12 +31,12 @@ void task_cons_main(struct LAYER *layer){
     fifo8_taskwaker(&task->kfifo,task);
 
     struct CONSOLE cons;
-    cons.x = 2 * 8;
+    cons.x = 8;
     cons.y = 28;
     cons.layer = layer;
+    *((int *)0x0fec) = (int)&cons;
 
-    print_refreshable_font(layer,8,28,COL8_WHITE,COL8_BLACK,">");
-    layer_refresh(layer, 8, 28, 8 + 8, 28 + 16);
+    cons_putchar(&cons,'>');
 
     while(1){
         cli();
@@ -73,9 +73,10 @@ void task_cons_main(struct LAYER *layer){
                         layer_refresh(layer, cons.x, cons.y, cons.x + 8, cons.y + 16);
                         cmdline[cons.x / 8 - 2] = '\0';
                         cons_newline(&cons);
+                        cons.x = 8;
                         cons_runcmd(cmdline, &cons);
-                        print_refreshable_font(layer, 8, cons.y, COL8_WHITE, COL8_BLACK, ">");
-                        cons.x = 16;
+                        cons.x = 8;
+                        cons_putchar(&cons,'>');
                         break;
                     default:
                         if( cons.x < CON_TEXT_X ){
@@ -250,7 +251,7 @@ void cons_startapp(char *cmdline, struct CONSOLE *console){
         char *p = (char *)mem_alloc_4k(memman, finfo[fileid].size);
         file_loadfile(finfo[fileid].clustno, finfo[fileid].size, p, fat, (char *)(ADR_DISKIMG + 0x003e00));
         set_segmdesc(gdt + 1003, finfo[fileid].size - 1, (int)p, AR_CODE32_ER);
-        farjump(0, 1003 << 3);
+        farcall(0, 1003 << 3);
         mem_free(memman, (int)p, finfo[fileid].size);
     }else{
         print_refreshable_font(layer, 8, console->y, COL8_WHITE, COL8_BLACK, "No Such File");
@@ -281,5 +282,17 @@ void cons_print(struct CONSOLE *console, char *p, int filesize){
             console->x = 8;
             cons_newline(console);
         }
+    }
+}
+
+void cons_putchar(struct CONSOLE *console, int chr){
+    cons_print(console,(char *)&chr,1);
+}
+
+void cons_puts(struct CONSOLE *console, char *p){
+    int i = 0;
+    while(p[i]){
+        cons_putchar(console, p[i]);
+        i++;
     }
 }

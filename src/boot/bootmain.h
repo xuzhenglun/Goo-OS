@@ -11,7 +11,6 @@
 
 void bootmain(void);
 void task_cons_main(struct LAYER *lay_win_b);
-int cons_newline(int y, struct LAYER *layer);
 
 struct BOOTINFO{
     char cyls,leds,vmode,reserve;

@@ -72,7 +72,7 @@ void task_cons_main(struct LAYER *layer){
                         boxfill8(layer->buf, layer->bxsize, COL8_BLACK, cons.x, cons.y, cons.x + 8, cons.y + 16);
                         layer_refresh(layer, cons.x, cons.y, cons.x + 8, cons.y + 16);
                         cmdline[cons.x / 8 - 2] = '\0';
-                        cons.y = cons_newline(cons.y, layer);
+                        cons_newline(&cons);
                         cons_runcmd(cmdline, &cons);
                         print_refreshable_font(layer, 8, cons.y, COL8_WHITE, COL8_BLACK, ">");
                         cons.x = 16;
@@ -101,9 +101,10 @@ void task_cons_main(struct LAYER *layer){
     }
 }
 
-int cons_newline(int cursor_y, struct LAYER *layer){
-    if(cursor_y <= 28 + CON_TEXT_Y - 16 * 2){
-        cursor_y += 16;
+void cons_newline(struct CONSOLE *console){
+    struct LAYER *layer = console->layer;
+    if(console->y <= 28 + CON_TEXT_Y - 16 * 2){
+        console->y += 16;
     }else{
         for(int y = 28; y < 28 + CON_TEXT_Y - 16; y++){
             for(int x = 8; x < 8 + CON_TEXT_X; x++){
@@ -117,7 +118,6 @@ int cons_newline(int cursor_y, struct LAYER *layer){
         }
         layer_refresh(layer, 8 , 28, 8 + CON_TEXT_X, 28 + CON_TEXT_Y);
     }
-    return cursor_y;
 }
 
 int find_file(char *cmdline, int start){
@@ -168,8 +168,8 @@ void cons_runcmd(char *cmdline, struct CONSOLE *console){
     }else if(cmdline[0] != '\0'){
         sprintf(s,"No Such Command \"%s\".",cmdline);
         print_refreshable_font(layer, 8, console->y, COL8_WHITE, COL8_BLACK, s);
-        console->y = cons_newline(console->y, layer);
-        console->y = cons_newline(console->y, layer);
+        cons_newline(console);
+        cons_newline(console);
     }
 }
 
@@ -179,8 +179,8 @@ void cons_mem(struct CONSOLE *console){
     int memtotal = memtest(0x00300000, 0xbfffffff); //总内存大小
     sprintf(s,"MEMORY:%dMB|FREE:%dKB",memtotal /(1024*1024),mem_total(memman)/1024);
     print_refreshable_font(layer, 8, console->y, COL8_WHITE, COL8_BLACK, s);
-    console->y = cons_newline(console->y, layer);
-    console->y = cons_newline(console->y, layer);
+    cons_newline(console);
+    cons_newline(console);
 }
 
 void cons_clear(struct CONSOLE *console){
@@ -209,12 +209,11 @@ void cons_ls(struct CONSOLE *console){
                 s[10] = finfo[x].filename.ext[1];
                 s[11] = finfo[x].filename.ext[2];
                 print_refreshable_font(layer, 8, console->y, COL8_WHITE, COL8_BLACK, s);
-                console->y = cons_newline(console->y, layer);
+                cons_newline(console);
             }
         }
     }
-    console->y = cons_newline(console->y, layer);
-
+    cons_newline(console);
 }
 
 void cons_cat(char *cmdline, struct CONSOLE *console){
@@ -223,7 +222,6 @@ void cons_cat(char *cmdline, struct CONSOLE *console){
     struct LAYER *layer = console->layer;
     struct FILEINFO *finfo = (struct FILEINFO *)(ADR_DISKIMG + 0x002600);
     struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
-    char s[30];
     int *fat = (int *)mem_alloc_4k(memman, sizeof(int) * 2880);
     file_readfat(fat, (unsigned char *)(ADR_DISKIMG + 0x000200));
 
@@ -231,33 +229,12 @@ void cons_cat(char *cmdline, struct CONSOLE *console){
         int filesize = finfo[fileid].size;
         char *p = (char *) mem_alloc_4k(memman, finfo[fileid].size);
         file_loadfile(finfo[fileid].clustno, finfo[fileid].size, p, fat, (char *)(ADR_DISKIMG + 0x003e00));
-        for(int i = 0; i < filesize ; i++){
-            if(p[i] == '\r' );
-            else if(p[i] == '\n'){
-                console->y = cons_newline(console->y, layer);
-                cursor_x = 8;
-            }else if(p[i] == '\t'){
-                cursor_x += 8 * 4;
-                if(cursor_x >= 8 + CON_TEXT_X){
-                    cursor_x = 8;
-                    console->y = cons_newline(console->y, layer);
-                }
-            }else{
-                s[0] = p[i];
-                s[1] = '\0';
-                print_refreshable_font(layer, cursor_x, console->y, COL8_WHITE, COL8_BLACK, s);
-                cursor_x += 8;
-            }
-            if(cursor_x == 8 + CON_TEXT_X){
-                cursor_x = 8;
-                console->y = cons_newline(console->y, layer);
-            }
-        }
+        cons_print(console, p, filesize);
         mem_free(memman, (int)p, filesize);
     }else{
         print_refreshable_font(layer, cursor_x, console->y, COL8_WHITE, COL8_BLACK, "No Such File");
     }
-    console->y = cons_newline(console->y, layer);
+    cons_newline(console);
 }
 
 void cons_startapp(char *cmdline, struct CONSOLE *console){
@@ -278,5 +255,31 @@ void cons_startapp(char *cmdline, struct CONSOLE *console){
     }else{
         print_refreshable_font(layer, 8, console->y, COL8_WHITE, COL8_BLACK, "No Such File");
     }
-    console->y = cons_newline(console->y, layer);
+    cons_newline(console);
+}
+
+void cons_print(struct CONSOLE *console, char *p, int filesize){
+    char s[30];
+    for(int i = 0; i < filesize ; i++){
+        if(p[i] == '\r' );
+        else if(p[i] == '\n'){
+            cons_newline(console);
+            console->x = 8;
+        }else if(p[i] == '\t'){
+            console->x += 8 * 4;
+            if(console->x == 8 + CON_TEXT_X){
+                console->x = 8;
+                cons_newline(console);
+            }
+        }else{
+            s[0] = p[i];
+            s[1] = '\0';
+            print_refreshable_font(console->layer, console->x, console->y, COL8_WHITE, COL8_BLACK, s);
+            console->x += 8;
+        }
+        if(console->x == 8 + CON_TEXT_X){
+            console->x = 8;
+            cons_newline(console);
+        }
+    }
 }

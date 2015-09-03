@@ -14,7 +14,7 @@ struct CONSOLE{
 };
 
 void task_cons_main(struct LAYER *lay_win_b);
-int cons_newline(int y, struct LAYER *layer);
+void cons_newline(struct CONSOLE *console);
 int find_file(char *cmdline, int start);
 void cons_runcmd(char *cmdline, struct CONSOLE *console);
 void cons_mem(struct CONSOLE *console);
@@ -22,5 +22,6 @@ void cons_clear(struct CONSOLE *console);
 void cons_ls(struct CONSOLE *console);
 void cons_cat(char *cmdline, struct CONSOLE *console);
 void cons_startapp(char *cmdline, struct CONSOLE *console);
+void cons_print(struct CONSOLE *console, char *p, int filesize);
 
 #endif

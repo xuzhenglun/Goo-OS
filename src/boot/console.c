@@ -249,6 +249,7 @@ void cons_startapp(char *cmdline, struct CONSOLE *console){
     int fileid = find_file(cmdline,6);
     if(fileid != -1){
         char *p = (char *)mem_alloc_4k(memman, finfo[fileid].size);
+        *((int *)0xfe8) = (int)p;
         file_loadfile(finfo[fileid].clustno, finfo[fileid].size, p, fat, (char *)(ADR_DISKIMG + 0x003e00));
         set_segmdesc(gdt + 1003, finfo[fileid].size - 1, (int)p, AR_CODE32_ER);
         farcall(0, 1003 << 3);

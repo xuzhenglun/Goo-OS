@@ -3,9 +3,9 @@ OBJS_BOOTPACK = bootasm.o bootmain.o basic.o font.o sprintf.o vsprintf.o \
 				memory.o layer.o timer.o mtask.o keyboard.o strcmp.o memcmp.o \
 				memcpy.o strncmp.o fat12.o console.o api.o
 
-APPS = hlt.go hello.go hello2.go
-
 INCPATH  = ./src/golibc/
+
+ROOT = $(shell pwd)
 
 MAKE     = make
 NASM     = nasm
@@ -15,7 +15,8 @@ CC       = gcc -O0 -I$(INCPATH) -c -std=c99 -masm=intel -fno-pic -static \
 OBJCOPY  = objcopy
 
 
-goo.img : os.img bootblock.bin Makefile $(APPS)
+goo.img : os.img bootblock.bin Makefile ./src/app/Makefile
+	make -C ./src/app/ OP=$(ROOT)
 	rm ./tmp -rf
 	mkdir ./tmp
 	sudo mount -o loop os.img ./tmp
@@ -29,9 +30,6 @@ goo.img : os.img bootblock.bin Makefile $(APPS)
 	sudo umount ./tmp
 	mv os.img goo.img
 
-black.bin : ./src/app/black.si Makefile
-	$(NASM) ./src/app/black.s -o black.bin
-
 IPL.bin : ./src/boot/IPL.s Makefile
 	$(NASM) ./src/boot/IPL.s -o IPL.bin
 	
@@ -41,18 +39,12 @@ bootasm.o : ./src/boot/bootasm.s Makefile
 int_asm.o : ./src/boot/int_asm.s Makefile
 	$(NASM) -f elf32 ./src/boot/int_asm.s -o int_asm.o
 
-#io_out8.o : ./src/boot/io_out8.s
-	#$(NASM) -f elf32 ./src/boot/io_out8.s -o io_out8.o
-
 os.img : IPL.bin Makefile
 	cp IPL.bin os.img
 	dd if=/dev/zero of=os.img bs=512 seek=1 count=2879
 
 bootblock.bin : bootblock.o Makefile
 	$(OBJCOPY) --set-section-flags .bss=alloc,load,contents -O binary bootblock.o bootblock.bin
-
-%.go : %.o Makefile
-	$(OBJCOPY) --set-section-flags .bss=alloc,load,contents -O binary $*.o $*.go
 
 bootblock.o : $(OBJS_BOOTPACK) Makefile
 	ld  -m elf_i386 -e start -Ttext 0xc400 -o bootblock.o $(OBJS_BOOTPACK)
@@ -65,9 +57,6 @@ font.o : font.bin Makefile
 
 font.bin : makefont.a ./src/boot/hankaku.txt Makefile
 	./makefont.a ./src/boot/hankaku.txt font.bin
-
-%.o : ./src/app/%.s Makefile
-	$(NASM) -f elf32 ./src/app/$*.s -o $*.o
 
 %.o : ./src/golibc/%.c Makefile
 	$(CC) ./src/golibc/$*.c
@@ -92,6 +81,7 @@ clean :
 	find . -name "*.a"  | xargs rm -f
 	find . -name "*.bin"  | xargs rm -f
 	find . -name "*.go" | xargs rm -f
+	find . -name "*.obj" | xargs rm -f
 	rm ./tmp -rf
 
-travis: bootblock.bin os.img $(APPS)
+travis: bootblock.bin os.img

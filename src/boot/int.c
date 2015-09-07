@@ -84,7 +84,19 @@ void int_handler_2c(int *esp){
 int *int_handler_0d(int *esp){
     struct CONSOLE *cons = (struct CONSOLE *)*((int *)0x0fec);
     struct TASK *task = task_now();
-    /*putchar('!');*/
+    char s[30];
+    sprintf(s,"\nEIP = 0x%08X", esp[11]);
+    cons_puts(cons, s);
     cons_puts(cons,"\nInt 0x0D :\n\tGeneral Protection Exception\n");
+    return &(task->tss.esp0);
+}
+
+int *int_handler_0c(int *esp){
+    struct CONSOLE *cons = (struct CONSOLE *)*((int *)0x0fec);
+    struct TASK *task = task_now();
+    char s[30];
+    sprintf(s,"\nEIP = 0x%08X", esp[11]);
+    cons_puts(cons, s);
+    cons_puts(cons,"\nInt 0x0C :\n\tStack Exception\n");
     return &(task->tss.esp0);
 }

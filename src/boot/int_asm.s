@@ -1,5 +1,5 @@
-    EXTERN int_handler_21,int_handler_2c,int_handler_27,int_handler_20,int_handler_0d,api_handler
-    global asm_int_handler_21,asm_int_handler_2c,asm_int_handler_27,asm_int_handler_20,asm_api_handler,asm_int_handler_0d,start_app
+    EXTERN int_handler_21,int_handler_2c,int_handler_27,int_handler_20,int_handler_0c,int_handler_0d,api_handler
+    global asm_int_handler_21,asm_int_handler_2c,asm_int_handler_27,asm_int_handler_20,asm_int_handler_0c,asm_api_handler,asm_int_handler_0d,start_app
 
 asm_int_handler_21:
 
@@ -81,6 +81,26 @@ asm_int_handler_0d:
     MOV     DS,AX
     MOV     ES,AX
     CALL    int_handler_0d
+    CMP     EAX,0
+    JNE     end_app
+    POP     EAX
+    POPAD
+    POP     DS
+    POP     ES
+    ADD     ESP,4
+    IRETD
+
+asm_int_handler_0c:
+    STI
+    PUSH    ES
+    PUSH    DS
+    PUSHAD
+    MOV     EAX,ESP
+    PUSH    EAX
+    MOV     AX,SS
+    MOV     DS,AX
+    MOV     ES,AX
+    CALL    int_handler_0c
     CMP     EAX,0
     JNE     end_app
     POP     EAX

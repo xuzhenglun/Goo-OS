@@ -93,13 +93,13 @@ void farcall(int eip,int cs){
 /*void start_app(int eip, int cs, int esp, int ds, int *tss_esp0){*/
     /*__asm__ __volatile__(*/
         /*"PUSHAD\n"*/
-        /*"MOV    EAX,%4\n"*/
-        /*"MOV    ECX,%3\n"*/
+        /*"MOV    EAX,%0\n"*/
+        /*"MOV    ECX,%1\n"*/
         /*"MOV    EDX,%2\n"*/
-        /*"MOV    EBX,%1\n"*/
-        /*"MOV    EBP,%0\n"*/
+        /*"MOV    EBX,%3\n"*/
+        /*"MOV    EBP,%4\n"*/
         /*"MOV    [EBP],ESP\n"*/
-        /*"MOV    [EBP],SS\n"*/
+        /*"MOV    [EBP + 4],SS\n"*/
         /*"MOV    ES,BX\n"*/
         /*"MOV    DS,BX\n"*/
         /*"MOV    FS,BX\n"*/

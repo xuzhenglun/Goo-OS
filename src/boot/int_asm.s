@@ -130,6 +130,7 @@ asm_api_handler:
 
 end_app:
     MOV     ESP,[EAX]
+    MOV     DWORD [EAX+4],0
     POPAD
     RET
 

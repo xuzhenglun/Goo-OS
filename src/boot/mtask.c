@@ -58,6 +58,7 @@ struct TASK *task_alloc(int priority, int task_addr, int argc, int stack_size){
              task->tss.ds    = 1 << 3;
              task->tss.fs    = 1 << 3;
              task->tss.gs    = 1 << 3;
+             task->tss.ss0   = 0;
              task->father    = 0;
              return task;
          }

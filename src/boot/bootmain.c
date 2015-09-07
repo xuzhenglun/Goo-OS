@@ -225,7 +225,7 @@ void bootmain(void) {
                         layer_refresh(lay_win, 0, 0, lay_win->bxsize, 21);
                         layer_refresh(task_cons_lay, 0, 0, task_cons_lay->bxsize, 21);
                     }
-                    if( i == 0x3b && Key_shift != 0 && task_cons->tss.esp0 !=  0){
+                    if( i == 0x3b && Key_shift != 0 && task_cons->tss.ss0 !=  0){
                         struct CONSOLE *cons = (struct CONSOLE *)*((int *)0xfec);
                         cons_puts(cons,"\nTASKKILLED!\n");
                         cli();

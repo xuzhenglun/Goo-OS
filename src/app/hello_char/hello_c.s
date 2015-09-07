@@ -10,7 +10,8 @@ putloop:
     JMP     putloop
 
 fin:
-    RETF
+    MOV     EDX,4
+    INT     0X40
 
 msg:
     DB      "Hello World!",0

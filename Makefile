@@ -61,6 +61,12 @@ font.bin : makefont.a ./src/boot/hankaku.txt Makefile
 %.o : ./src/golibc/%.c Makefile
 	$(CC) ./src/golibc/$*.c
 
+%.o : ./src/api/%.c Makefile
+	$(CC) ./src/api/$*.c
+
+%.o : ./src/api/%.s Makefile
+	$(NASM) -f elf32 ./src/api/$*.s -o $*.o
+
 %.o : ./src/boot/%.c ./src/boot/%.h Makefile
 	$(CC) ./src/boot/$*.c
 

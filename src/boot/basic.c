@@ -89,3 +89,30 @@ void farcall(int eip,int cs){
             "CALL FAR PTR [esp+8]"
         );
 }
+
+/*void start_app(int eip, int cs, int esp, int ds, int *tss_esp0){*/
+    /*__asm__ __volatile__(*/
+        /*"PUSHAD\n"*/
+        /*"MOV    EAX,%4\n"*/
+        /*"MOV    ECX,%3\n"*/
+        /*"MOV    EDX,%2\n"*/
+        /*"MOV    EBX,%1\n"*/
+        /*"MOV    EBP,%0\n"*/
+        /*"MOV    [EBP],ESP\n"*/
+        /*"MOV    [EBP],SS\n"*/
+        /*"MOV    ES,BX\n"*/
+        /*"MOV    DS,BX\n"*/
+        /*"MOV    FS,BX\n"*/
+        /*"MOV    GS,BX\n"*/
+
+        /*"OR     ECX,3\n"*/
+        /*"OR     EBX,3\n"*/
+        /*"PUSH   EBX\n"*/
+        /*"PUSH   EDX\n"*/
+        /*"PUSH   ECX\n"*/
+        /*"PUSH   EAX\n"*/
+        /*"RETF\n"*/
+        /*:*/
+        /*:"r"(eip),"r"(cs),"r"(esp),"r"(ds),"r"(tss_esp0)*/
+        /*);*/
+/*}*/

@@ -23,6 +23,8 @@ void int_handler_20(int * esp);
 void int_handler_21(int * esp);
 void int_handler_27(int * esp);
 void int_handler_2c(int * esp);
+int *int_handler_0d(int * esp);
+void asm_int_handler_0d(void);
 void asm_int_handler_20(void);
 void asm_int_handler_21(void);
 void asm_int_handler_27(void);

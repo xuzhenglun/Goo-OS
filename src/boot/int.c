@@ -5,6 +5,8 @@
 #include "graph.h"
 #include "timer.h"
 #include "mtask.h"
+#include "console.h"
+#include "../api/libapi.h"
 
 void init_pic(void){
     io_out8(PIC0_IMR,  0xff  );
@@ -79,4 +81,10 @@ void int_handler_2c(int *esp){
     fifo8_put(&mousefifo, data);
 }
 
-
+int *int_handler_0d(int *esp){
+    struct CONSOLE *cons = (struct CONSOLE *)*((int *)0x0fec);
+    struct TASK *task = task_now();
+    /*putchar('!');*/
+    cons_puts(cons,"\nInt 0x0D :\n\tGeneral Protection Exception\n");
+    return &(task->tss.esp0);
+}

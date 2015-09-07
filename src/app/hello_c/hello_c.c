@@ -13,4 +13,5 @@ void appmain(){
     putchar('l');
     putchar('d');
     putchar('!');
+    end_app();
 }

@@ -20,11 +20,12 @@ void init_gdtidt(void){
     }
     load_idtr(LIMIT_IDT, ADR_IDT);
 
+    set_gatedesc(idt + 0x0d, (int) asm_int_handler_0d, 2 * 8, AR_INTGATE32);
     set_gatedesc(idt + 0x20, (int) asm_int_handler_20, 2 * 8, AR_INTGATE32);
     set_gatedesc(idt + 0x21, (int) asm_int_handler_21, 2 * 8, AR_INTGATE32);
     set_gatedesc(idt + 0x27, (int) asm_int_handler_27, 2 * 8, AR_INTGATE32);
     set_gatedesc(idt + 0x2c, (int) asm_int_handler_2c, 2 * 8, AR_INTGATE32);
-    set_gatedesc(idt + 0x40, (int) asm_api_handler   , 2 * 8, AR_INTGATE32);
+    set_gatedesc(idt + 0x40, (int) asm_api_handler   , 2 * 8, AR_INTGATE32 + 0x60);
 
 }
 

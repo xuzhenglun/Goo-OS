@@ -2,6 +2,6 @@
 #define LIBAPI_H_H
 
 void putchar(int str);
-void RETF(void);
-
+void puts(char *string);
+void end_app();
 #endif

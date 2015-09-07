@@ -1,4 +1,4 @@
-void api_end(void);
+void end_app(void);
 
 void appmain(void){
     *((char *) 0x00102600) = 0;

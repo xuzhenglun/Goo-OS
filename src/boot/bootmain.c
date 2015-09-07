@@ -13,6 +13,8 @@
 #include "keyboard.h"
 #include "fat12.h"
 #include "bootmain.h"
+#include "console.h"
+#include "../api/libapi.h"
 
 struct LAYER_CTL * layctl;                     //初始化定义层控制体
 struct LAYER *lay_back,*lay_mouse,*lay_win;        //定义鼠标层和背景层
@@ -222,6 +224,14 @@ void bootmain(void) {
                         }
                         layer_refresh(lay_win, 0, 0, lay_win->bxsize, 21);
                         layer_refresh(task_cons_lay, 0, 0, task_cons_lay->bxsize, 21);
+                    }
+                    if( i == 0x3b && Key_shift != 0 && task_cons->tss.esp0 !=  0){
+                        struct CONSOLE *cons = (struct CONSOLE *)*((int *)0xfec);
+                        cons_puts(cons,"\nTASKKILLED!\n");
+                        cli();
+                        task_cons->tss.eax = (int)&(task_cons->tss.esp0);
+                        task_cons->tss.eip = (int)end_app;
+                        sti();
                     }
                     if( i == 0x2a || i == 0x36)
                         Key_shift = 1;

@@ -1,5 +1,5 @@
 OP = .
-OBJS = fw.o libapi.o
+OBJS = libapi.o
 
 API_PATH  = ./../../api/
 LIBC_PATH = ./../../golibc/
@@ -13,7 +13,7 @@ OBJCOPY  = objcopy
 
 crack2.go: $(OBJS) crack2.c Makefile
 	$(CC) ./crack2.c -o crack2.o
-	ld -m elf_i386 -o crack2.obj $(OBJS) crack2.o
+	ld -m elf_i386 -o crack2.obj crack2.o $(OBJS)
 	$(OBJCOPY) --set-section-flags .bss=alloc,load,contents -O binary crack2.obj $(OP)/crack2.go
 
 %.o : $(API_PATH)/%.s Makefile

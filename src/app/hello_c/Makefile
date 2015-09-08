@@ -1,5 +1,5 @@
 OP = .
-OBJS = fw.o libapi.o
+OBJS = libapi.o
 
 API_PATH  = ./../../api/
 LIBC_PATH = ./../../golibc/
@@ -13,7 +13,7 @@ OBJCOPY  = objcopy
 
 hello_c.go: $(OBJS) hello_c.c Makefile
 	$(CC) ./hello_c.c -o hello_c.o
-	ld -m elf_i386 -o hello_c.obj $(OBJS) hello_c.o
+	ld -m elf_i386 -o hello_c.obj hello_c.o $(OBJS)
 	$(OBJCOPY) --set-section-flags .bss=alloc,load,contents -O binary hello_c.obj $(OP)/hello_c.go
 
 %.o : $(API_PATH)/%.s Makefile

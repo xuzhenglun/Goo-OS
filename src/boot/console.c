@@ -251,11 +251,10 @@ void cons_startapp(char *cmdline, struct CONSOLE *console){
     if(fileid != -1){
         char *p = (char *)mem_alloc_4k(memman, finfo[fileid].size);
         char *q = (char *)mem_alloc_4k(memman, 64 * 1024);
-        *((int *)0xfe8) = (int)p;
+        *((int *)0xfe8) = (int)q;
         file_loadfile(finfo[fileid].clustno, finfo[fileid].size, p, fat, (char *)(ADR_DISKIMG + 0x003e00));
         set_segmdesc(gdt + 1003, finfo[fileid].size - 1, (int)p, AR_CODE32_ER + 0x60);
         set_segmdesc(gdt + 1004, 64 * 1024 - 1         , (int)q, AR_DATA32_RW + 0x60);
-        /*farcall(0, 1003 << 3);*/
         start_app(0, 1003 << 3, 64 * 1024, 1004 << 3, &(task->tss.esp0));
         mem_free(memman, (int)p, finfo[fileid].size);
         mem_free(memman, (int)q, 64 * 1024);

@@ -24,8 +24,6 @@ goo.img : os.img bootblock.bin Makefile ./src/app/Makefile
 	echo "God's in his heaven. All's right with the world!" > ./NERV.txt
 	sudo cp ./NERV.txt ./tmp/NERV.txt
 	rm ./NERV.txt
-	sudo cp ./src/boot/IPL.s ./tmp/
-	sudo cp ./src/boot/basic.c ./tmp/
 	sudo cp *.go ./tmp/
 	sudo umount ./tmp
 	mv os.img goo.img

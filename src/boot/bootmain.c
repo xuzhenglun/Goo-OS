@@ -120,6 +120,7 @@ void bootmain(void) {
     int kflag,mflag,tflag;                                                                //初始化键盘鼠标中断相关变量
     int x = 8;
     int color = 0;
+    *((int *)0x0fe4) = (int) layctl;
 
     /* task_console */
     struct TASK *task_cons;

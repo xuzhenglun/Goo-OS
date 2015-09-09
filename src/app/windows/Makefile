@@ -11,10 +11,9 @@ CC       = gcc -O0 -I$(INCPATH) -c -std=c99 -masm=intel -fno-pic -static \
 		   -fno-omit-frame-pointer -fno-stack-protector -fno-pic -O -c
 OBJCOPY  = objcopy
 
-mkw.go: $(OBJS) mkwin.c mkw.s Makefile
+mkw.go: $(OBJS) mkwin.c Makefile
 	$(CC) mkwin.c
-	$(NASM) -f elf32 mkw.s -o mkw.o
-	ld -m elf_i386 -o mkwin.obj mkwin.o mkw.o libapi.o
+	ld -m elf_i386 -o mkwin.obj mkwin.o $(OBJS)
 	$(OBJCOPY) --set-section-flags .bss=alloc,load,contents -O binary mkwin.obj $(OP)/mkw.go
 
 %.o : $(API_PATH)/%.s Makefile

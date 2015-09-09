@@ -1,10 +1,8 @@
-int api_openwin(char *buf, int xsiz, int ysiz, int col_inv, char *title);
-void end_app(void);
-
-
+#include "./../../api/libapi.h"
 
 void appmain(){
     char buf[150 * 50];
-    api_openwin(buf, 150, 50, -1, "hello");
+    char title[30] = "Hello";
+    mkwindow(buf, 150, 50, -1 , title);
     end_app();
 }

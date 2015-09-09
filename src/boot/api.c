@@ -25,7 +25,7 @@ int *api_handler(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, 
         case 5:
             lay = layer_alloc(layctl);
             layer_setbuf(lay, (char *)ebx + ds_base, esi, edi, eax);
-            make_window8((char *)ebx + ds_base, esi, edi, "SHIT", 0);
+            make_window8((char *)ebx + ds_base, esi, edi, (char *)ecx + ds_base, 0);
             layer_slide(lay, 100, 50);
             layer_updown(lay, 3);
             reg[7] = (int)lay;
